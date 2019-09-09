@@ -1,6 +1,7 @@
 # Controller type: PID
 import os
 
+A= []
 K = 15
 attackLen = 6
 safeTheta = 0.1
