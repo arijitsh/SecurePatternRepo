@@ -1,6 +1,6 @@
 clc;
 clear all;
-diary dbl_int.out;
+%diary dbl_int.out;
 %%%%%%%%%%%%%%--Given l,epsolon,sampling period--%%%%%%%%%%%%%
 exec_pattern='10000011111';
 exec_pattern1= strrep(exec_pattern, '1','.1');

@@ -1,28 +1,27 @@
-function[table]=dropStats(lenght,decay,system,sampling_period)
-
+function[tbl]=dropStats(varargin)
+% function[tbl]=dropStats(length,decay,system,T)
 %%%%%%%%%%%%%%--Given l,epsolon,sampling period--%%%%%%%%%%%%%
-
-l=30;
-epsilon = 0.964;
+l=varargin(1)
+epsilon = varargin(2)
 exp_decay= (log(1/epsilon))/l             % desired decay rate from (l,epsilon)
 stab=1;                                     % while loop first run
 i=1;
 cnt=6;
 horizon=100;
-
+system=varargin(3);
+h=varargin(4);
 %%%%%%%%%%% plant %%%%%%%%%%%
-A = [-0.313 56.7 0; -0.0139 -0.426 0; 0 56.7 0];
-B = [0.232; 0.0203; 0];
-C = [0 0 1];
-D = [0];  
-
-x0 = [1;1;1];                             % ini state
-x = x0;         
-t0 = [0];                               
-t = t0;
-k=0;
-n=0;
-h = 0.01*30;                                % sampling rate 
+A = system.a;
+B = system.b;
+C = system.c;
+D = system.d;  
+% 
+% x0 = [1;1;1];                             % ini state
+% x = x0;         
+% t0 = [0];                               
+% t = t0;
+% k=0;
+% n=0;                               % sampling rate 
 open_loop = ss(A,B,C,D);
 eig_open= eig(A);                   
 Ts=h;
@@ -182,7 +181,7 @@ Mu_Val=Mu';
 Alpha_val=Alpha_di';
 % Gamma=log(gamma_eig');
 Gamma=log(gamma');
-T=table(Sampling_Time,Self_Loop_Count,Min_Dwell_Time,Mu_Val,Alpha_val,Gamma)
+tbl=table(Sampling_Time,Self_Loop_Count,Min_Dwell_Time,Mu_Val,Alpha_val,Gamma)
 
 %DwellingRatio
 %rate
