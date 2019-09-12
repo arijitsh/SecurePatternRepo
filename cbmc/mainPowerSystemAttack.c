@@ -3,7 +3,6 @@
 
 int main()
 {
-    
     int K = 15, counter=0, attackLen = 7, startpoint = 3;
     int temp = 0, index = 0;
     int drop[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
