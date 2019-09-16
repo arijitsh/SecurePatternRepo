@@ -4,6 +4,10 @@ B=[0 0;5.679 0;1.136 -3.146;1.136 0];
 C=[1 0 1 -1;0 1 0 0];
 sys= ss(A,B,C,zeros(2,2));
 step(sys)
-H=ss2tf(A,B,C,zeros(2,2),2);
-[wn,zeta]=damp(H(1,:))
-timePeriod =1/(zeta*wn)
+FD=bode(sys)
+%h=1/(30*bandwidth(sys))
+h=0.5
+pole(sys)
+sysd=c2d(sys,h);
+pole(sysd)
+controllable=[rank(sysd.a)==rank(ctrb(sysd))]

@@ -152,7 +152,7 @@ end
 solvesdp(constraints);
 solvesdp(constraints_di);
 p=1;q=1;
-gammaUnstable=[]
+gammaUnstable=[];
 %%%%%%%%%%%--Gamma,Taud calculation--%%%%%%%%%%%%%
 for i=1:size(sampling_time,2)
     if (isdt(closed_loops{i})==1)  % for discrete-time
