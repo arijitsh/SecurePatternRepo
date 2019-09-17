@@ -9,9 +9,9 @@ D= np.matrix('0 ; 0')
 K= np.matrix('0.0556 0.3306')
 L= np.matrix('0.36 0.27;  -0.31 0.08')
 
-u_count=B.shape(1)
-x_count=A.shape(1)
-y_count=C.shape(0)
+u_count=B.shape[1]
+x_count=A.shape[1]
+y_count=C.shape[0]
 
 safex = [0.1,0.05]
 th = 0.03
@@ -38,7 +38,11 @@ try:
     f.write("int const K ="+str(K)+",attackLen = "+str(attackLen)+", startpoint = "+str(startpoint)+";\n")
     f.write("int main()\n")
     f.write("\t{\n");
-    f.write("\t\tfloat r1[K], r2[K], r[K], theta[K], omega[K], a1[K], a2[K], ");
+    f.write("\t\tfloat r[K], a1[K], a2[K], ");
+    for varcount in range(1,x_count+1):
+        f.write("x"+str(varcount)+"_abs[K],")
+    for varcount in range(1,y_count+1):
+        f.write("r"+str(varcount)+"[K],")
     decl=""
     for counter in range(0,K+1):
         for varcount in range(1,x_count+1):
@@ -86,8 +90,8 @@ try:
             for varcount1 in range(1,u_count+1):
                 expr_u+="\t\tu"+str(varcount1)+"_"+str(counter)+" ="
                 for varcount2 in range(1,x_count+1):
-                    expr_u+="-("+K[varcount1,varcount2]+"*z"+str(varcount2)+"_"+str(counter)+")"
-                # end of for 
+#                    expr_u+="-("+str(K[varcount1,varcount2])+"*z"+str(varcount2)+"_"+str(counter)+")"
+#               end of for
                 expr_u+=";\n"
                 expr_uatk+="\t\tu"+str(varcount1)+"_attacked_"+str(counter)+" = u"+str(varcount1)+"_"+str(counter)+" + a1["+str(counter)+"];\n"
             ## end of for
@@ -105,15 +109,15 @@ try:
             expr_rabs="\t\tr["+str(counter)+"] = max("
             for varcount1 in range(1,y_count+1):
                 expr_y+="\t\ty"+str(varcount1)+"_"+str(counter)+" = "
-                expr_r+="\t\tr"+str(varcount1)+"_"+str(counter)+" = y"+str(varcount1)+"_"+str(counter)
+                expr_r+="\t\tr"+str(varcount1)+"["+str(counter)+"] = y"+str(varcount1)+"_"+str(counter)
                 expr_rabs+="absolute(r"+str(varcount1)+"["+str(counter)+"]),"
                 for varcount2 in range(1,x_count+1):
-                    expr_y+="+("+C[varcount1,varcount2]+"*x"+str(varcount2)+"_"+str(counter)+")"
-                    expr_r+="-("+C[varcount1,varcount2]+"*z"+str(varcount2)+"_"+str(counter)+")"
+                    expr_y+="+("+str(C[varcount1,varcount2])+"*x"+str(varcount2)+"_"+str(counter)+")"
+                    expr_r+="-("+str(C[varcount1,varcount2])+"*z"+str(varcount2)+"_"+str(counter)+")"
                 # end of for 
                 for varcount3 in range(1,u_count+1):
-                    expr_y+="+("+D[varcount1,varcount3]+"*u"+str(varcount3)+"_"+str(counter)+")"
-                    expr_r+="-("+D[varcount1,varcount3]+"*u"+str(varcount3)+"_attacked_"+str(counter)+")"
+                    expr_y+="+("+str(D[varcount1,varcount3])+"*u"+str(varcount3)+"_"+str(counter)+")"
+                    expr_r+="-("+str(D[varcount1,varcount3])+"*u"+str(varcount3)+"_attacked_"+str(counter)+")"
                 # end of for 
                 expr_rabs=expr_rabs[:len(expr_rabs)-2]          #removing last comma
                 expr_rabs=");\n"
@@ -136,12 +140,12 @@ try:
                 expr_x+="\t\tx"+str(varcount1)+"_"+str(counter+1)+" = "
                 expr_z+="\t\tz"+str(varcount1)+"_"+str(counter+1)+" = "
                 for varcount2 in range(1,x_count+1):
-                    expr_x+="+("+A[varcount1,varcount2]+"*x"+str(varcount2)+"_"+str(counter)+")"
-                    expr_z+="+("+A[varcount1,varcount2]+"*z"+str(varcount2)+"_"+str(counter)+")"
+                    expr_x+="+("+str(A[varcount1,varcount2])+"*x"+str(varcount2)+"_"+str(counter)+")"
+                    expr_z+="+("+str(A[varcount1,varcount2])+"*z"+str(varcount2)+"_"+str(counter)+")"
                 # end of for 
                 for varcount3 in range(1,u_count+1):
-                    expr_x+="+("+B[varcount1,varcount3]+"*u"+str(varcount3)+"_"+str(counter)+")"
-                    expr_z+="+("+B[varcount1,varcount3]+"*u"+str(varcount3)+"_attacked_"+str(counter)+")"
+                    expr_x+="+("+str(B[varcount1,varcount3])+"*u"+str(varcount3)+"_"+str(counter)+")"
+                    expr_z+="+("+str(B[varcount1,varcount3])+"*u"+str(varcount3)+"_attacked_"+str(counter)+")"
                 # end of for 
                 expr_x+=";\n"
                 expr_z+=";\n"
@@ -175,7 +179,7 @@ try:
             expr_rabs="\t\tr["+str(counter)+"] = max("
             for varcount1 in range(1,y_count+1):
                 #expr_y+="\t\ty"+str(varcount1)+"_"+str(counter)+" = "
-                expr_r+="\t\tr"+str(varcount1)+"_"+str(counter)+" = r"+str(varcount1)+"_"+str(counter-1)
+                expr_r+="\t\tr"+str(varcount1)+"["+str(counter)+"] = r"+str(varcount1)+"["+str(counter-1)+"]"
                 expr_rabs+="absolute(r"+str(varcount1)+"["+str(counter)+"]),"
                 # drop ---------------------------------------------------------
                 #for varcount2 in range(1,x_count+1):
