@@ -4,6 +4,7 @@
 int main()
 {
     int K = 15, counter=0, attackLen = 7, startpoint = 3;
+    int count,len=0;
     int temp = 0, index = 0;
     int drop[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
     //int drop[] = {1,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0};
@@ -112,8 +113,8 @@ int main()
     fprintf(fp,"\t\treturn 0;\n");
     fprintf(fp,"\t}");
     fclose(fp);
-    system("gcc input.c");
-    system("nohup ./cbmc powersys_th_09.c --trace &>powersys_th_09.out");
-    system("nohup ./cbmc powersys_th_09.c --trace &>powersys_th_09.out");
+    //system("gcc input.c");
+    //system("nohup ./cbmc powersys_th_09.c --trace &>powersys_th_09.out");
+    //system("nohup ./cbmc powersys_th_09.c --trace &>powersys_th_09.out");
     return 0;
 }
