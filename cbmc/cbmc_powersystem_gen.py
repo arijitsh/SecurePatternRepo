@@ -1,5 +1,5 @@
 import os
-import numpy
+import numpy as np
 
 A= np.matrix('0.66 0.53; -0.53 0.13')
 B= np.matrix('0.34; 0.53')
