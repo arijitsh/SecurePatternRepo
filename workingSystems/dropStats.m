@@ -188,7 +188,7 @@ Mu_Val=Mu';
 Alpha_val=Alpha_di';
 % Gamma=log(gamma_eig');
 Gamma=log(gamma');
-fprintf("Table for %f decay
+fprintf("Table for %f decay")
 tbl=table(Sampling_Time,Self_Loop_Count,Min_Dwell_Time,Mu_Val,Alpha_val,Gamma)
 
 fprintf("dwelling ratio for %f decay = %f",exp_decay,DwellingRatio);

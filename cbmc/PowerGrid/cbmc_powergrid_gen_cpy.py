@@ -1,27 +1,28 @@
 import os
 import numpy as np
 
-modelName= "powersystem"
-A= np.matrix('0.66 0.53; -0.53 0.13')
-B= np.matrix('0.34; 0.53')
-C= np.matrix('1 0; 0 1')
-D= np.matrix('0 ; 0')
-Gain= np.matrix('0.0556 0.3306')
-L= np.matrix('0.36 0.27;  -0.31 0.08')
-
-u_count=B.shape[1]
-x_count=A.shape[1]
-y_count=C.shape[0]
-
-safex = [0.1,0.05]
+safex = [0.05,0.15]
 th = 0.03
 startpoint=0
 K=15
 attackLen=7
 pattern= 1
+
+modelName= "powergrid"
+A= np.matrix('-1 -3;3 -5')
+B= np.matrix('2 -1;1 0')
+C= np.matrix('0.8 2.4;1.6 0.8')
+D= np.matrix('0 0; 0 0')
+Gain= np.matrix('2.9846   -4.9827;6.9635   -6.9599')
+L= np.matrix('-1.1751   -0.1412;-2.6599    2.2549')
+
+u_count=B.shape[1]
+x_count=A.shape[1]
+y_count=C.shape[0]
+
 #rpt=K/length(pattern)
 
-drop = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+drop = np.ones(K+1)
 start = 0
 index = start
 isSat = 0
@@ -38,13 +39,13 @@ try:
     f.write("int const K ="+str(K)+",attackLen = "+str(attackLen)+", startpoint = "+str(startpoint)+";\n")
     f.write("int main()\n")
     f.write("\t{\n")
-    f.write("\t\tfloat r[K], a1[K], a2[K], ")
+    f.write("\t\tfloat r[K], u_attack[{0}][{1}], y_attack[{2}][{3}], ".format(u_count,attackLen,y_count,attackLen))
     for varcount in range(1,x_count+1):
         f.write("x"+str(varcount)+"_abs[K],")
     for varcount in range(1,y_count+1):
         f.write("r"+str(varcount)+"[K],")
-    decl=""
     for counter in range(0,K+1):
+        decl = ""
         for varcount in range(1,x_count+1):
             decl+="x"+str(varcount)+"_"+str(counter)+" = 0, z"+str(varcount)+"_"+str(counter)+" = 0,"
             decl+="x"+str(varcount)+"next_"+str(counter)+" = 0, z"+str(varcount)+"next_"+str(counter)+" = 0,"
@@ -52,29 +53,31 @@ try:
             decl+="u"+str(varcount)+"_"+str(counter)+" = 0, u"+str(varcount)+"_attacked_"+str(counter)+" = 0,"
         for varcount in range(1,y_count+1):
             decl+="y"+str(varcount)+"_"+str(counter)+" = 0, "
-        #f.write("x1_"+str(counter)+" = 0, x2_"+str(counter)+" = 0, u_"+str(counter)+" = 0, u_attacked_"+str(counter)+" = 0, y1_"+str(counter)+" = 0, y2_"+str(counter)+" = 0, z1_"+str(counter)+" = 0, z2_"+str(counter)+" = 0,x1next_"+str(counter)+" = 0, x2next_"+str(counter)+" = 0, z1next_"+str(counter)+" = 0, z2next_"+str(counter)+" = 0");
         
         if counter!=K:
             f.write(decl)
-            f.write(",")
         else :
             decl=decl[:len(decl)-2]             #removing last comma
             f.write(decl)
-            f.write(";\n")    
-    f.write("\t\tint8_t syn = 0;\n\n");
-    for counter in range(K+1):
+            f.write(";\n")
+    
+    f.write("\t\tint8_t syn = 0;\n\n")
+    for counter in range(K):
         f.write("\t\t//pattern="+str(drop[counter])+";\n")
-        if index+startpoint == counter :
-            f.write("\t\tsyn = nondet_int8();\n")
-            f.write("\t\ta1["+str(counter)+"] = AttackFormat2(syn);\n")
-            f.write("\t\tsyn = nondet_int8();\n")
-            f.write("\t\ta2["+str(counter)+"] = AttackFormat2(syn);\n")
-            index=index+1
-            if index==attackLen:
-                index = 0
-        else:
-            f.write("\t\ta1["+str(counter)+"] = 0;\n")
-            f.write("\t\ta2["+str(counter)+"] = 0;\n")
+        for varcount1 in range(u_count):
+            if index+startpoint == counter :
+                f.write("\t\tu_attack["+str(varcount1)+"]["+str(counter)+"] = 0;\n") #No attack to the actuator command                
+            else:
+                f.write("\t\tu_attack["+str(varcount1)+"]["+str(counter)+"] = 0;\n")
+        for varcount1 in range(y_count):
+            if index+startpoint == counter:
+                f.write("\t\ty_attack["+str(varcount1)+"]["+str(counter)+"] = AttackFormat2(syn);\n")       # Attack to both the sensor                
+            else:
+                f.write("\t\ty_attack["+str(varcount1)+"]["+str(counter)+"] = 0;\n")
+        
+        index=index+1
+        if index==attackLen:
+            index = 0
 
         if drop[counter]:
             
@@ -88,7 +91,7 @@ try:
                 for varcount2 in range(1,x_count+1):
                     expr_u+=" - ("+str(Gain[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(counter)+")"
                 expr_u+=";\n"
-                expr_uatk+="\t\tu"+str(varcount1)+"_attacked_"+str(counter)+" = u"+str(varcount1)+"_"+str(counter)+" + a1["+str(counter)+"];\n"
+                expr_uatk+="\t\tu"+str(varcount1)+"_attacked_"+str(counter)+" = u"+str(varcount1)+"_"+str(counter)+" + u_attack["+str(varcount1-1)+"]["+str(counter)+"];\n"
             ## end of for
             f.write(expr_u)
             f.write(expr_uatk)
@@ -103,7 +106,7 @@ try:
             expr_r=""
             expr_rabs="\t\tr["+str(counter)+"] = max("
             for varcount1 in range(1,y_count+1):
-                expr_y+="\t\ty"+str(varcount1)+"_"+str(counter)+" = a2["+str(counter)+"]"
+                expr_y+="\t\ty"+str(varcount1)+"_"+str(counter)+" = y_attack["+str(varcount1-1)+"]["+str(counter)+"]"
                 expr_r+="\t\tr"+str(varcount1)+"["+str(counter)+"] = y"+str(varcount1)+"_"+str(counter)
                 expr_rabs+="absolute(r"+str(varcount1)+"["+str(counter)+"]),"
                 for varcount2 in range(1,x_count+1):
@@ -132,15 +135,17 @@ try:
                 expr_x+="\t\tx"+str(varcount1)+"_"+str(counter+1)+" = "
                 expr_z+="\t\tz"+str(varcount1)+"_"+str(counter+1)+" = "
                 for varcount2 in range(1,x_count+1):
-                    expr_x+=" + ("+str(A[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(counter)+")"
-                    expr_z+=" + ("+str(A[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(counter)+")"
+                    expr_x+=" ("+str(A[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(counter)+") +"
+                    expr_z+=" ("+str(A[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(counter)+") +"
                 for varcount3 in range(1,u_count+1):
-                    expr_z+=" + ("+str(B[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(counter)+")"
-                    expr_x+=" + ("+str(B[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_attacked_"+str(counter)+")"
+                    expr_z+=" ("+str(B[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(counter)+") +"
+                    expr_x+=" ("+str(B[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_attacked_"+str(counter)+") +"
                 for varcount4 in range(1,y_count+1):
-                    expr_z+=" + ("+str(L[varcount1-1,varcount4-1])+"*r"+str(varcount4)+"["+str(counter)+"])"
-                expr_x+=";\n"
-                expr_z+=";\n"
+                    expr_z+=" ("+str(L[varcount1-1,varcount4-1])+"*r"+str(varcount4)+"["+str(counter)+"]) +"
+                expr_x=expr_x[:len(expr_x)-1] 
+                expr_x = expr_x + ";\n"
+                expr_z=expr_z[:len(expr_z)-1] 
+                expr_z = expr_z + ";\n"
             f.write(expr_z)
             f.write(expr_x)
 #################################################################################
@@ -232,8 +237,8 @@ try:
 
     for counter in range(0,K):
         for varcount in range(1,x_count+1):
-            f.write("(x"+str(varcount)+"_abs["+str(counter)+"]<="+str(safex[varcount-1]))
-            if counter!=(x_count):
+            f.write("(x"+str(varcount)+"_abs["+str(counter)+"]<="+str(safex[varcount-1])+")")
+            if varcount!=x_count:
                 f.write(" && ")
         if counter!=(K-1):
             f.write(" && ")
