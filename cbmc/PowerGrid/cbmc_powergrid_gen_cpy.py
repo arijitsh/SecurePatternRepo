@@ -5,7 +5,7 @@ safex = [0.05,0.15]
 th = 0.03
 startpoint=0
 K=15
-attackLen=7
+attackLen=10
 pattern= 1
 
 modelName= "powergrid"
@@ -39,7 +39,7 @@ try:
     f.write("int const K ="+str(K)+",attackLen = "+str(attackLen)+", startpoint = "+str(startpoint)+";\n")
     f.write("int main()\n")
     f.write("\t{\n")
-    f.write("\t\tfloat r[K], u_attack[{0}][{1}], y_attack[{2}][{3}], ".format(u_count,attackLen,y_count,attackLen))
+    f.write("\t\tfloat r[K], u_attack[{0}][{1}], y_attack[{2}][{3}], ".format(u_count,K,y_count,K))
     for varcount in range(1,x_count+1):
         f.write("x"+str(varcount)+"_abs[K],")
     for varcount in range(1,y_count+1):

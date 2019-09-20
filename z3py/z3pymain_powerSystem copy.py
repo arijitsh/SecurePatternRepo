@@ -14,17 +14,19 @@ u_count=B.shape[1]
 x_count=A.shape[1]
 y_count=C.shape[0]
 
+u_attack = np.zeros(u_count,dtype=float)
+y_attack = np.zeros(y_count,dtype=float)
+
+####### Configure which sensor/control input to attack ########
+u_attack[0] = 1
+y_attack[0] = 1
+
 safex = [0.1,0.05]
 th = 0.03
 startpoint=0
 K=15
 attackLen=6
 pattern= 1
-# K = 15
-# attackLen = 6
-# safeTheta = 0.1
-# safeOmega = 0.05
-# Th = 0.03
 
 start = 0
 index = start
@@ -50,10 +52,13 @@ while index<K and isSat == 0:
         f.write("xhat"+str(varcount)+" = np.zeros("+str(K+1)+", dtype=float)\n")
     for varcount in range(1,y_count+1):
         f.write("y"+str(varcount)+" = np.zeros("+str(K+1)+", dtype=float)\n")
+        f.write("attackOnY"+str(varcount)+" = np.zeros("+str(K+1)+", dtype=float)\n")
         f.write("yhat"+str(varcount)+" = np.zeros("+str(K+1)+", dtype=float)\n")
         f.write("r"+str(varcount)+" = np.zeros("+str(K+1)+", dtype=float)\n")
     for varcount in range(1,u_count+1):
         f.write("u"+str(varcount)+"_abs = np.zeros("+str(K+1)+", dtype=float)\n")
+        f.write("attackOnU"+str(varcount)+" = np.zeros("+str(K+1)+", dtype=float)\n")
+    f.write("r = np.zeros("+str(K+1)+", dtype=float)\n")
 
     # f.write("theta = np.zeros({0}, dtype=float)\n".format(K+1))
     # f.write("omega = np.zeros({0}, dtype=float)\n".format(K+1))
@@ -120,6 +125,7 @@ while index<K and isSat == 0:
             decl+="y"+str(varcount)+"_"+str(i)+" = Real('y"+str(varcount)+"_"+str(i)+"')\n"
             decl+="yhat"+str(varcount)+"_"+str(i)+" = Real('yhat"+str(varcount)+"_"+str(i)+"')\n"
             decl+="r"+str(varcount)+"_"+str(i)+" = Real('r"+str(varcount)+"_"+str(i)+"')\n"
+            decl+="y"+str(varcount)+"_attack_"+str(i)+" = Real('y"+str(varcount)+"_"+str(i)+"')\n"
 
         # f.write("x1_{0} = Real('x1_{1}')\n".format(i,i))
         # f.write("xhat1_{0} = Real('xhat1_{1}')\n".format(i,i))
@@ -138,11 +144,11 @@ while index<K and isSat == 0:
         for varcount in range(1,u_count+1):
             decl+="u"+str(varcount)+"_"+str(i)+" = Real('u"+str(varcount)+"_"+str(i)+"')\n"
             decl+="u"+str(varcount)+"_attacked_"+str(i)+" = Real('u"+str(varcount)+"_attacked_"+str(i)+"')\n"
+            decl+="u"+str(varcount)+"_attack_"+str(i)+" = Real('u"+str(varcount)+"_attack_"+str(i)+"')\n"
+        
 
         f.write(decl)
-        f.write("p_{0} = Real('p_{1}')\n".format(i,i))
-        f.write("q_{0} = Real('q_{1}')\n".format(i,i))
-        f.write("r_{0} = Real('r_{1}')\n".format(i,i))
+        f.write("r_"+str(i)+" = Real('r_"+str(i)+"')\n")
         
 
     f.write("\n")
@@ -159,7 +165,6 @@ while index<K and isSat == 0:
         f.write("s.add(x"+str(varcount)+"_0 == 0)\n")
         f.write("s.add(xhat"+str(varcount)+"_0 == 0)\n")
         f.write("s.add(x"+str(varcount)+"_abs_0 == 0)\n")
-
 
 
     j = 0
@@ -435,3 +440,4 @@ while index<K and isSat == 0:
     f0.close()
 
     index = index + 1
+    isSat=1

@@ -3,7 +3,7 @@ import numpy as np
 
 s = Solver()
 set_option(rational_to_decimal=True)
-set_option(precision=4)
+# set_option(precision=4)
 attack1 = np.zeros(16, dtype=float)
 attack2 = np.zeros(16, dtype=float)
 theta = np.zeros(16, dtype=float)
