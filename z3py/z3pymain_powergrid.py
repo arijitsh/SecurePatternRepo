@@ -1,15 +1,25 @@
 # Controller type: PID
 import os
 import numpy as np
+import errno
 
-modelName= "powersystem"
-A= np.matrix('0.66 0.53; -0.53 0.13')
-B= np.matrix('0.34; 0.53')
-C= np.matrix('1 0; 0 1')
-D= np.matrix('0 ; 0')
-Gain= np.matrix('0.0556 0.3306')
-L= np.matrix('0.36 0.27;  -0.31 0.08')
-
+modelName= "powergrid"
+A= np.matrix('-1 -3;3 -5')
+B= np.matrix('2 -1;1 0')
+C= np.matrix('0.8 2.4;1.6 0.8')
+D= np.matrix('0 0; 0 0')
+Gain= np.matrix('2.9846   -4.9827;6.9635   -6.9599')
+L= np.matrix('-1.1751   -0.1412;-2.6599    2.2549')
+safex = [0.05,0.15]
+th = 0.03
+################## creating the path to save results #################
+path="../results/z3/"+modelName+"/"
+try:
+    os.makedirs(path)
+except OSError as err:
+    if err.errno!= errno.EEXIST:
+        raise
+#####################################################################
 u_count=B.shape[1]
 x_count=A.shape[1]
 y_count=C.shape[0]
@@ -21,15 +31,12 @@ y_attack_map = np.zeros(y_count,dtype=float)
 u_attack_map[0] = 1
 y_attack_map[0] = 1
 
-safex = [0.1,0.05]
-th = 0.03
 attackLen=1
 pattern= 1
 
 start = 0
 isSat = 0
-
-f0 = open("powersystemresult_new.txt", "w+")
+f0 = open(path+modelName+".z3result", "w+")
 f0.write("0")
 f0.close()
 
@@ -38,7 +45,7 @@ while isSat == 0:
     index = start
     while (index+attackLen)<=K and isSat == 0:
         fileName = modelName + "_"+str(index)+"_"+str(attackLen)+"_"+str(K)+".py"
-        f = open(fileName, "w+")
+        f = open(path+fileName, "w+")
         f.write("from z3 import *\n")
         f.write("import numpy as np\n\n")
         f.write("s = Solver()\n")
@@ -177,7 +184,7 @@ while isSat == 0:
             for varcount1 in range(1,u_count+1):
                 expr_u+="s.add(u"+str(varcount1)+"_"+str(i)+" == "
                 for varcount2 in range(1,x_count+1):
-                    expr_u+=" - ("+str(Gain[varcount1-1,varcount2-1])+"*xhat"+str(varcount2)+"_"+str(i)+")"
+                    expr_u+=" - ("+str(Gain[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i)+")"
                 expr_u+=")\n"
             f.write(expr_u)
     ###############################################################################
@@ -490,7 +497,7 @@ while isSat == 0:
         # f.write("print(u)\n")
 
         f.write("if isSat==1:\n")
-        f.write("\tf0 = open(\"powersystemresult_new.txt\", \"w+\")\n")
+        f.write("\tf0 = open(\""+path+modelName+".z3result\", \"w+\")\n")
         f.write("\tf0.write(\"1\")\n")
         f.write("\tf0.close()\n")
 
@@ -506,12 +513,12 @@ while isSat == 0:
         # f.write("\tf2.write(\"{0}\".format(attack2[i]))\n")
         # f.write("\tif i != {0}-1:\n".format(attackLen))
         # f.write("\t\tf2.write(\",\")\n")
-        # f.write("f2.close()") 
+        # f.write("f2.close()")
 
         f.close()
-        os.system("python "+fileName+">"+fileName+".out")
+        os.system("python "+path+fileName+">"+path+fileName+".z3out")
 
-        f0 = open("powersystemresult_new.txt","r")
+        f0 = open(path+modelName+".z3result", "r")
         if f0.mode == 'r':
             content = f0.read()
             isSat = int(content)

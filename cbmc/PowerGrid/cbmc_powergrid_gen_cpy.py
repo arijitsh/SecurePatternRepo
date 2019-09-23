@@ -1,8 +1,7 @@
 import os
 import numpy as np
+import errno
 
-safex = [0.05,0.15]
-th = 0.03
 startpoint=0
 K=15
 attackLen=10
@@ -15,7 +14,16 @@ C= np.matrix('0.8 2.4;1.6 0.8')
 D= np.matrix('0 0; 0 0')
 Gain= np.matrix('2.9846   -4.9827;6.9635   -6.9599')
 L= np.matrix('-1.1751   -0.1412;-2.6599    2.2549')
-
+safex = [0.05,0.15]
+th = 0.03
+################## creating the path to save results #################
+path="../cbmcresults/"+modelName+"/"
+try:
+    os.makedirs(path)
+except OSError as err:
+    if err.errno!= errno.EEXIST:
+        raise
+#####################################################################
 u_count=B.shape[1]
 x_count=A.shape[1]
 y_count=C.shape[0]
@@ -29,7 +37,7 @@ isSat = 0
 
 filename= modelName+"_"+str(th)+"_"+str(startpoint)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".c"
 try:
-    f = open(filename, "w+")
+    f = open(path+filename, "w+")
     f.write("#include<stdio.h>\n")
     f.write("#include<math.h>\n")
     f.write("#include<inttypes.h>\n")

@@ -1,6 +1,7 @@
 # Prerequisites
 *.d
-
+*.m~
+fuse*
 # Object files
 *.o
 *.out

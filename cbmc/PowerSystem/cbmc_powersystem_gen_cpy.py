@@ -1,8 +1,8 @@
 import os
 import numpy as np
+import errno
 
-safex = [0.1,0.05]
-th = 0.03
+
 startpoint=0
 K=15
 attackLen=7
@@ -15,7 +15,16 @@ C= np.matrix('1 0; 0 1')
 D= np.matrix('0 ; 0')
 Gain= np.matrix('0.0556 0.3306')
 L= np.matrix('0.36 0.27;  -0.31 0.08')
-
+safex = [0.1,0.05]
+th = 0.03
+################## creating the path to save results #################
+path="../results/cbmc/"+modelName+"/"
+try:
+    os.makedirs(path)
+except OSError as err:
+    if err.errno!= errno.EEXIST:
+        raise
+#####################################################################
 u_count=B.shape[1]
 x_count=A.shape[1]
 y_count=C.shape[0]
@@ -30,9 +39,10 @@ start = 0
 index = start
 isSat = 0
 
-filename= modelName+"_"+str(th)+"_"+str(startpoint)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".c"
+cfilename= modelName+"_"+str(th)+"_"+str(startpoint)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".c"
+outfilename= modelName+"_"+str(th)+"_"+str(startpoint)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".cbmcout"
 try:
-    f = open(filename, "w+")
+    f = open(path+cfilename, "w+")
     f.write("#include<stdio.h>\n")
     f.write("#include<math.h>\n")
     f.write("#include<inttypes.h>\n")
@@ -255,6 +265,6 @@ try:
     f.write("\t\treturn 0;\n")
     f.write("\t}")
     #os.system("gcc input.c");
-    #os.system("nohup ./cbmc powersys_th_09.c --trace &>powersys_th_09.out")
+    os.system("nohup "+path+cfilename+" --trace &>"+path+outfilename)
 finally:
     f.close()
