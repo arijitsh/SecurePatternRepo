@@ -42,8 +42,6 @@ x = zeros(size(A,1),1);
 z = 0.1*ones(size(A,1),1);
 u = zeros(size(A,1),1);
 
-% ak1 = [0.0012398557];
-% u_attack = []
 
 for i=1:time
     y = C*x
