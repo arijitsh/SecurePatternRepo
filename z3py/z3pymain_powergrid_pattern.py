@@ -10,7 +10,7 @@ C= np.matrix('0.8 2.4;1.6 0.8')
 D= np.matrix('0 0; 0 0')
 Gain= np.matrix('2.9846   -4.9827;6.9635   -6.9599')
 L= np.matrix('-1.1751   -0.1412;-2.6599    2.2549')
-safex = [0.05,0.15]
+safex = [0.1,0.2]
 th = 0.03
 ################## creating the path to save results #################
 path="../results/z3/"+modelName+"/"
@@ -210,9 +210,10 @@ while isSat == 0:
                 f.write("s.add(r_{0}<{1})\n".format(i,th))          
                 
             expr_x=""
+            expr_xabs=""
             expr_z=""
             for varcount1 in range(1,x_count+1):
-                expr_x+="s.add(x"+str(varcount1)+"_"+str(i+1)+" == "
+                expr_x+="s.add(x"+str(varcount1)+"_"+str(i+1)+" == "                
                 expr_z+="s.add(z"+str(varcount1)+"_"+str(i+1)+" == "
                 for varcount2 in range(1,x_count+1):
                     expr_x+=" ("+str(A[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i)+") +"
@@ -222,6 +223,9 @@ while isSat == 0:
                     expr_x+=" ("+str(B[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_attacked_"+str(i)+") +"
                 for varcount4 in range(1,y_count+1):
                     expr_z+=" ("+str(L[varcount1-1,varcount4-1])+"*r"+str(varcount4)+"_"+str(i)+") +"
+                
+                expr_xabs+="s.add(x"+str(varcount1)+"_abs_"+str(i+1)+" == If(x"+str(varcount1)+"_"+str(i+1)+"<0,(-1)*x"+str(varcount1)+"_"+str(i+1)+",x"+str(varcount1)+"_"+str(i+1)+"))\n"
+
                 expr_x=expr_x[:len(expr_x)-1] 
                 expr_x = expr_x + ")\n"
                 expr_z=expr_z[:len(expr_z)-1] 
@@ -229,6 +233,7 @@ while isSat == 0:
 
             f.write(expr_z)
             f.write(expr_x)
+            f.write(expr_xabs)
             
         f.write("s.add(Or(")
         assertion=""
@@ -266,5 +271,4 @@ while isSat == 0:
         f0.close()
 
         index = index + 1
-        
     attackLen = attackLen + 1
