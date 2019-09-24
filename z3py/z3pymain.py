@@ -3,15 +3,15 @@ import os
 import numpy as np
 import errno
 
-modelName= "powergrid"
-A= np.matrix('-1 -3;3 -5')
-B= np.matrix('2 -1;1 0')
-C= np.matrix('0.8 2.4;1.6 0.8')
-D= np.matrix('0 0; 0 0')
-Gain= np.matrix('2.9846   -4.9827;6.9635   -6.9599')
-L= np.matrix('-1.1751   -0.1412;-2.6599    2.2549')
-safex = [0.1,0.2]
-th = 0.03
+modelName= "tempControl"
+A= np.matrix('-0.11 0.1;0 -50')
+B= np.matrix('0;-50')
+C= np.matrix('1 0')
+D= np.matrix('0')
+Gain= np.matrix('-0.3712   -0.0007')
+L= np.matrix('0.6071;0.3929')
+safex = [0.1,0.1]
+th = 0.02
 ################## creating the path to save results #################
 path="../results/z3/"+modelName+"/"
 try:
@@ -32,7 +32,7 @@ u_attack_map[0] = 1
 y_attack_map[0] = 1
 
 attackLen=1
-pattern= 101
+pattern= 1
 offset = 4
 start = 0
 isSat = 0
@@ -61,7 +61,7 @@ f0.write("0")
 f0.close()
 
 while isSat == 0:  
-    print("attack length"+str(attackLen)+"\n")
+    print("attack length:"+str(attackLen)+"\n")
     index = start
     while (index<patternLen) and (isSat == 0):
         # create drop pattern
@@ -109,11 +109,11 @@ while isSat == 0:
             for varcount in range(1,x_count+1):
                 decl+="x"+str(varcount)+"_"+str(i)+" = Real('x"+str(varcount)+"_"+str(i)+"')\n"
                 decl+="z"+str(varcount)+"_"+str(i)+" = Real('z"+str(varcount)+"_"+str(i)+"')\n"
-                decl+="xabs"+str(varcount)+"_"+str(i)+" = Real('x"+str(varcount)+"_abs_"+str(i)+"')\n"
+                decl+="xabs"+str(varcount)+"_"+str(i)+" = Real('xabs"+str(varcount)+"_"+str(i)+"')\n"
 
             for varcount in range(1,u_count+1):
                 decl+="u"+str(varcount)+"_"+str(i)+" = Real('u"+str(varcount)+"_"+str(i)+"')\n"
-                decl+="uattacked"+str(varcount)+"_"+str(i)+" = Real('u"+str(varcount)+"_attacked_"+str(i)+"')\n"
+                decl+="uattacked"+str(varcount)+"_"+str(i)+" = Real('uattacked"+str(varcount)+"_"+str(i)+"')\n"
 
             decl+="r_"+str(i)+" = Real('r_"+str(i)+"')\n"
             f.write(decl)
@@ -249,9 +249,12 @@ while isSat == 0:
         f.write("else:\n")
         f.write("\tprint(s.check())\n")
         f.write("\tisSat = 1\n")
+        f.write("\tf0 = open(\""+path+modelName+".z3result\", \"w+\")\n")
+        f.write("\tf0.write(\"1\")\n")
+        f.write("\tf0.close()\n") 
         f.write("\tm = s.model()\n")
         f.write("\tfor d in m.decls():\n")
-        f.write("\t\tprint (\"%s = %s\" % (d.name(), m[d]))\n")
+        # f.write("\t\tprint (\"%s = %s\" % (d.name(), m[d]))\n")
         for varcount in range(1,u_count+1): # Parsing u, attack on u and attacked u values from the z3 py output
             f.write("\t\tif \"attackOnU"+str(varcount)+"_\" in d.name():\n")
             f.write("\t\t\ti = int(d.name().split('_')[1])\n")
@@ -355,6 +358,10 @@ while isSat == 0:
 
         # Printing the execution sequence
         f.write("\tfor i in range({0}):\n".format(K))
+        for varcount in  range(1, x_count+1):
+            f.write("\t\tprint(\"x"+str(varcount)+"_{0}={1}\".format(i,x"+str(varcount)+"[i]))\n") 
+            f.write("\t\tprint(\"xabs"+str(varcount)+"_{0}={1}\".format(i,xabs"+str(varcount)+"[i]))\n") 
+            f.write("\t\tprint(\"z"+str(varcount)+"_{0}={1}\".format(i,z"+str(varcount)+"[i]))\n") 
         for varcount in  range(1, u_count+1):
             f.write("\t\tprint(\"u"+str(varcount)+"_{0}={1}\".format(i,u"+str(varcount)+"[i]))\n")
             f.write("\t\tprint(\"attackOnU"+str(varcount)+"_{0}={1}\".format(i,attackOnU"+str(varcount)+"[i]))\n")    
@@ -364,10 +371,7 @@ while isSat == 0:
             f.write("\t\tprint(\"y"+str(varcount)+"_{0}={1}\".format(i,y"+str(varcount)+"[i]))\n")
             f.write("\t\tprint(\"r"+str(varcount)+"_{0}={1}\".format(i,r"+str(varcount)+"[i]))\n")
         f.write("\t\tprint(\"r_{0}={1}\".format(i,r[i]))\n")
-        for varcount in  range(1, x_count+1):
-            f.write("\t\tprint(\"x"+str(varcount)+"_{0}={1}\".format(i,x"+str(varcount)+"[i]))\n") 
-            f.write("\t\tprint(\"xabs"+str(varcount)+"_{0}={1}\".format(i,xabs"+str(varcount)+"[i]))\n") 
-            f.write("\t\tprint(\"r"+str(varcount)+"_{0}={1}\".format(i,r"+str(varcount)+"[i]))\n") 
+        
           
         # Printing attack vectors
         for varcount in  range(1, u_count+1):
