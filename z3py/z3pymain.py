@@ -4,14 +4,14 @@ import numpy as np
 import errno
 
 modelName= "tempControl"
-A= np.matrix('-0.11 0.1;0 -50')
-B= np.matrix('0;-50')
+A= np.matrix('0.94648514795348381856143760160194 0.0018971440127071483982418298452899;0 0.000000000013887943864964020896356969649573')
+B= np.matrix('-0.046752721484125708828472056666214;-0.99999999998611222018496391683584')
 C= np.matrix('1 0')
 D= np.matrix('0')
-Gain= np.matrix('-0.3712   -0.0007')
-L= np.matrix('0.6071;0.3929')
-safex = [0.1,0.1]
-th = 0.02
+Gain= np.matrix('-0.3712408426327057364702000086254 -0.0007441187601164687840174516431091')
+L= np.matrix('0.60711740001928504728567759229918;0.39288259998275032458536770718638')
+safex = [0.05,0.05]
+th = 0.04
 ################## creating the path to save results #################
 path="../results/z3/"+modelName+"/"
 try:
@@ -38,11 +38,7 @@ start = 0
 isSat = 0
 
 #Compute pattern length
-patternLen=0
-patternTemp = pattern
-while(patternTemp>0):
-    patternLen=patternLen+1
-    patternTemp=patternTemp//10
+patternLen=len(str(pattern))
 
 #Compute pattern array
 patternArray = np.zeros((patternLen), dtype=int)
@@ -123,11 +119,42 @@ while isSat == 0:
             f.write("s.add(x"+str(varcount)+"_0 == 0)\n")
             f.write("s.add(z"+str(varcount)+"_0 == 0)\n")
             f.write("s.add(xabs"+str(varcount)+"_0 == 0)\n")
+        for varcount in range(1,u_count+1):
+            f.write("s.add(u"+str(varcount)+"_0 == 0)\n")
+            f.write("s.add(uattacked"+str(varcount)+"_0 == 0)\n")
+        for varcount in range(1,y_count+1):
+            f.write("s.add(r"+str(varcount)+"_0 == 0)\n")
         f.write("\n")
 
         j = 0
-        for i in range(K):
+        for i in range(1,K):
             f.write("# pattern = "+str(dropPattern[i])+"\n")
+            expr_x=""
+            expr_xabs=""
+            expr_z=""
+            for varcount1 in range(1,x_count+1):
+                expr_x+="s.add(x"+str(varcount1)+"_"+str(i)+" == "                
+                expr_z+="s.add(z"+str(varcount1)+"_"+str(i)+" == "
+                for varcount2 in range(1,x_count+1):
+                    expr_x+=" ("+str(A[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i-1)+") +"
+                    expr_z+=" ("+str(A[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i-1)+") +"
+                for varcount3 in range(1,u_count+1):
+                    expr_z+=" ("+str(B[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i-1)+") +"
+                    expr_x+=" ("+str(B[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i-1)+") +"
+                for varcount4 in range(1,y_count+1):
+                    expr_z+=" ("+str(L[varcount1-1,varcount4-1])+"*r"+str(varcount4)+"_"+str(i-1)+") +"
+                
+                expr_xabs+="s.add(xabs"+str(varcount1)+"_"+str(i)+" == If(x"+str(varcount1)+"_"+str(i)+"<0,(-1)*x"+str(varcount1)+"_"+str(i)+",x"+str(varcount1)+"_"+str(i)+"))\n"
+
+                expr_x=expr_x[:len(expr_x)-1] 
+                expr_x = expr_x + ")\n"
+                expr_z=expr_z[:len(expr_z)-1] 
+                expr_z = expr_z + ")\n"            
+
+            f.write(expr_z)
+            f.write(expr_x)
+            f.write(expr_xabs)
+
             if dropPattern[i]==0:
                 expr_u=""
                 for varcount1 in range(1,u_count+1):
@@ -206,32 +233,6 @@ while isSat == 0:
                 f.write(expr_r)
                 
                 f.write("s.add(r_{0}<{1})\n".format(i,th))          
-                
-            expr_x=""
-            expr_xabs=""
-            expr_z=""
-            for varcount1 in range(1,x_count+1):
-                expr_x+="s.add(x"+str(varcount1)+"_"+str(i+1)+" == "                
-                expr_z+="s.add(z"+str(varcount1)+"_"+str(i+1)+" == "
-                for varcount2 in range(1,x_count+1):
-                    expr_x+=" ("+str(A[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i)+") +"
-                    expr_z+=" ("+str(A[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i)+") +"
-                for varcount3 in range(1,u_count+1):
-                    expr_z+=" ("+str(B[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i)+") +"
-                    expr_x+=" ("+str(B[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i)+") +"
-                for varcount4 in range(1,y_count+1):
-                    expr_z+=" ("+str(L[varcount1-1,varcount4-1])+"*r"+str(varcount4)+"_"+str(i)+") +"
-                
-                expr_xabs+="s.add(xabs"+str(varcount1)+"_"+str(i+1)+" == If(x"+str(varcount1)+"_"+str(i+1)+"<0,(-1)*x"+str(varcount1)+"_"+str(i+1)+",x"+str(varcount1)+"_"+str(i+1)+"))\n"
-
-                expr_x=expr_x[:len(expr_x)-1] 
-                expr_x = expr_x + ")\n"
-                expr_z=expr_z[:len(expr_z)-1] 
-                expr_z = expr_z + ")\n"            
-
-            f.write(expr_z)
-            f.write(expr_x)
-            f.write(expr_xabs)
             
         f.write("s.add(Or(")
         assertion=""
@@ -360,15 +361,21 @@ while isSat == 0:
         f.write("\tfor i in range({0}):\n".format(K))
         for varcount in  range(1, x_count+1):
             f.write("\t\tprint(\"x"+str(varcount)+"_{0}={1}\".format(i,x"+str(varcount)+"[i]))\n") 
-            f.write("\t\tprint(\"xabs"+str(varcount)+"_{0}={1}\".format(i,xabs"+str(varcount)+"[i]))\n") 
+        for varcount in  range(1, x_count+1):
             f.write("\t\tprint(\"z"+str(varcount)+"_{0}={1}\".format(i,z"+str(varcount)+"[i]))\n") 
+        for varcount in  range(1, x_count+1):
+            f.write("\t\tprint(\"xabs"+str(varcount)+"_{0}={1}\".format(i,xabs"+str(varcount)+"[i]))\n") 
         for varcount in  range(1, u_count+1):
-            f.write("\t\tprint(\"u"+str(varcount)+"_{0}={1}\".format(i,u"+str(varcount)+"[i]))\n")
-            f.write("\t\tprint(\"attackOnU"+str(varcount)+"_{0}={1}\".format(i,attackOnU"+str(varcount)+"[i]))\n")    
+            f.write("\t\tprint(\"attackOnU"+str(varcount)+"_{0}={1}\".format(i,attackOnU"+str(varcount)+"[i]))\n")  
+        for varcount in  range(1, u_count+1):
+            f.write("\t\tprint(\"u"+str(varcount)+"_{0}={1}\".format(i,u"+str(varcount)+"[i]))\n")  
+        for varcount in  range(1, u_count+1):
             f.write("\t\tprint(\"uattacked"+str(varcount)+"_{0}={1}\".format(i,uattacked"+str(varcount)+"[i]))\n")
         for varcount in  range(1, y_count+1):
             f.write("\t\tprint(\"attackOnY"+str(varcount)+"_{0}={1}\".format(i,attackOnY"+str(varcount)+"[i]))\n") 
+        for varcount in  range(1, y_count+1):
             f.write("\t\tprint(\"y"+str(varcount)+"_{0}={1}\".format(i,y"+str(varcount)+"[i]))\n")
+        for varcount in  range(1, y_count+1):
             f.write("\t\tprint(\"r"+str(varcount)+"_{0}={1}\".format(i,r"+str(varcount)+"[i]))\n")
         f.write("\t\tprint(\"r_{0}={1}\".format(i,r[i]))\n")
         
