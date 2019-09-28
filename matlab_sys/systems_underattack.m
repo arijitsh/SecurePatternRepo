@@ -6,7 +6,6 @@ clc;
 % B=[2 -1;1 0];
 % C=[0.8 2.4;1.6 0.8];
 % D=zeros(size(C,1),size(B,2));
-% K=[2];
 % 
 % Ts = 1;
 % pgrid = ss(A,B,C,D);
@@ -24,7 +23,7 @@ clc;
 % QN =1;
 % RN = eye(size(C,1));
 % [KEST,L,PN] = kalman(pgrid_d,QN,RN)
-% 
+
 % % for i=1:1000000
 % %     L=(PN*C')/(C*PN*C'+RN);
 % %     PN=(eye(size(C,1))-L*C)*PN;
@@ -41,8 +40,8 @@ clc;
 % x = zeros(size(A,1),1);
 % z = 0.1*ones(size(A,1),1);
 % u = zeros(size(B,2),1);
-% 
-% 
+
+
 % for i=1:time
 %     y = C*x
 %     r = C*x - C*z;
@@ -280,72 +279,198 @@ clc;
 % hold off;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% temperature control %%%%%%%%%%%%%%%%%%%%%%%
-A=[-0.11 0.1;0 -50];
-B=[0;-50];
-C=[1 0];
-D=[0];
-tmp_cntrl=ss(A,B,C,D);
-Ts=0.5;
-tmp_cntrl_d=c2d(tmp_cntrl,Ts);
-controllability_tc=[rank(tmp_cntrl_d.a)==rank(ctrb(tmp_cntrl_d))]
+% A=[-0.11 0.1;0 -50];
+% B=[0;-50];
+% C=[1 0];
+% D=[0];
+% tmp_cntrl=ss(A,B,C,D);
+% Ts=0.5;
+% tmp_cntrl_d=c2d(tmp_cntrl,Ts);
+% controllability_tc=[rank(tmp_cntrl_d.a)==rank(ctrb(tmp_cntrl_d))]
+% 
+% A = tmp_cntrl_d.a
+% B = tmp_cntrl_d.b
+% C = tmp_cntrl_d.c
+% D = tmp_cntrl_d.d
+% 
+% p = 100;
+% Q = p*eye(size(A));
+% R = 0.1*eye(size(B,2),size(B,2));
+% K = dlqr(A,B,Q,R)
+% tmp_cntrl_cl =ss(A-B*K,zeros(size(B)),C,D,Ts);
+% isstable(tmp_cntrl_cl)
+% 
+% QN = 0.00001;
+% RN = 0.00001;
+% [KEST,L,P] = kalman(tmp_cntrl_d,QN,RN)
+% 
+% for i=1:1000
+%     L=P*C'*inv(C*P*C'+RN);
+%     P=(eye(size(A,1))-L*C)*P;
+%     P=(A*P*A'+QN);
+% end
+% 
+% 
+% time = 5;
+% plot_vectorx1 = ones(1,time);
+% plot_vectorx2 = ones(1,time);
+% plot_vectorxnorm = ones(1,time);
+% plot_vectorz1 = ones(1,time);
+% plot_vectorz2 = ones(1,time);
+% plot_vectorznorm = ones(1,time);
+% 
+% ak1 = [-0.0500038552 0.0500047252];
+% ak1 = [0];
+% attackOnU = [ak1 zeros(1,time-size(ak1,2))];
+% 
+% ak2 = [-0.0000038552 -0.0023800349];
+% ak2 = [0];
+% attackOnY = [ak2 zeros(size(C,1),time-size(ak1,2))]
+% 
+% x = zeros(size(A,1),1)
+% z = ones(size(A,1),1)
+% u = zeros(size(B,2),1);
+% u_attacked = zeros(size(B,2),1);
+% r = zeros(size(C,1));
+% 
+% for i=1:time
+%     i
+%     
+%     z = A*z + B*u + L*r
+%     x = A*x + B*u_attacked    
+%     attackOnU(i)
+%     u = -K*x
+%     u_attacked = u + attackOnU(i)
+%     attackOnY(:,i)
+%     y = C*x 
+%     y_attacked = y + attackOnY(:,i)
+%     r = y_attacked - C*z   
+%     
+%     
+%     plot_vectorx1(i) = x(1);
+%     plot_vectorz1(i) = z(1);
+%     plot_vectorx2(i) = x(2);
+%     plot_vectorz2(i) = z(2);
+%     plot_vectorxnorm(i) = norm(x,1);
+%     plot_vectorznorm(i) = norm(z,1);
+% end
+% 
+% fontsize = 10;
+% linewidth = 1;
+% 
+% clf;
+% subplot(2,2,1);
+% hold on;
+% plot(plot_vectorx1,'LineWidth',linewidth);
+% plot(plot_vectorz1,'LineWidth',linewidth);
+% set(gca,'FontSize',fontsize)
+% grid on;
+% hold off;
+% 
+% subplot(2,2,2);
+% hold on;
+% plot(plot_vectorx2,'LineWidth',linewidth);
+% plot(plot_vectorz2,'LineWidth',linewidth);
+% set(gca,'FontSize',fontsize)
+% grid on;
+% hold off;
+% 
+% subplot(2,2,3);
+% hold on;
+% plot(plot_vectorxnorm,'LineWidth',linewidth);
+% plot(plot_vectorznorm,'LineWidth',linewidth);
+% set(gca,'FontSize',fontsize)
+% grid on;
+% hold off;
 
-A = tmp_cntrl_d.a
-B = tmp_cntrl_d.b
-C = tmp_cntrl_d.c
-D = tmp_cntrl_d.d
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Power system  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%  A = [0.66 0.53;
+%        -0.53 0.13];
+%  B = [0.34;    %B1=Bp1
+%         0.53];
+%  C = eye(2);
+% %  L=[0.36 0.27;  -0.31 0.08];    
+%  D = [0 ;
+%         0];
+%  K= [0.0556 0.3306];
+%  Ts=1;
+% pwr_plnt_d =ss(A,B,C,D,Ts);
+% controllability_pp=[rank(pwr_plnt_d.a)==rank(ctrb(pwr_plnt_d))]
+% pwr_plnt_cl =ss(A-B*K,zeros(size(B)),C,D,Ts);
+% isstable(pwr_plnt_cl)
+% A = pwr_plnt_d.a
+% B = pwr_plnt_d.b
+% C = pwr_plnt_d.c
+% D = pwr_plnt_d.d
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Plant %%%%%%%%%%%%%%%%%%%
+
+A=[1.38 -0.2077 6.715 -5.676;-0.5814 -4.29 0 0.675;
+    1.067 4.273 -6.654 5.893;0.048 4.273 1.343 -2.104];
+B=[0 0;5.679 0;1.136 -3.146;1.136 0];
+C=[1 0 1 -1;0 1 0 0];
+D=zeros(2,2);
+plant= ss(A,B,C,D);
+Ts=0.5
+plant_d=c2d(plant,Ts);
+controllability_p=[rank(plant_d.a)==rank(ctrb(plant_d))]
+
+A = plant_d.a
+B = plant_d.b
+C = plant_d.c
+D = plant_d.d
 
 p = 100;
 Q = p*eye(size(A));
 R = 0.1*eye(size(B,2),size(B,2));
 K = dlqr(A,B,Q,R)
-tmp_cntrl_cl =ss(A-B*K,zeros(size(B)),C,D,Ts);
-isstable(tmp_cntrl_cl)
+plant_cl =ss(A-B*K,zeros(size(B)),C,D,Ts);
+isstable(plant_cl)
 
-QN = 0.00001;
-RN = 0.00001;
-[KEST,L,P] = kalman(tmp_cntrl_d,QN,RN)
+QN = 10;
+RN = 0.00001*eye(size(C,1));
+[KEST,L,P] = kalman(plant_d,QN,RN)
 
-for i=1:1000
-    L=P*C'*inv(C*P*C'+RN);
-    P=(eye(size(A,1))-L*C)*P;
-    P=(A*P*A'+QN);
-end
+% for i=1:1000
+%     L=P*C'*inv(C*P*C'+RN);
+%     P=(eye(size(A,1))-L*C)*P;
+%     P=(A*P*A'+QN);
+% end
 
-
-time = 5;
+time = 30;
 plot_vectorx1 = ones(1,time);
 plot_vectorx2 = ones(1,time);
+plot_vectorx3 = ones(1,time);
+plot_vectorx4 = ones(1,time);
 plot_vectorxnorm = ones(1,time);
 plot_vectorz1 = ones(1,time);
 plot_vectorz2 = ones(1,time);
+plot_vectorz3 = ones(1,time);
+plot_vectorz4 = ones(1,time);
 plot_vectorznorm = ones(1,time);
 
-ak1 = [-0.1000000026];
-attackOnU = [ak1 zeros(1,time-size(ak1,2))];
 
-ak2 = [0.0085962892];
-attackOnY = [ak2 zeros(size(C,1),time-size(ak1,2))]
-
-x = zeros(size(A,1),1)
-z = zeros(size(A,1),1)
+x = zeros(size(A,1),1);
+z = 0.001*ones(size(A,1),1);
 u = zeros(size(B,2),1);
 
+
 for i=1:time
-    i
-    attackOnU(i)
-    u = -K*x
-    u_attacked = u + attackOnU(i)
-    attackOnY(:,i)
-    y = C*x + attackOnY(:,i)
-    r = y - C*z
-    x = A*x + B*u_attacked
-    z = A*z + B*u + L*r
-    
+    y = C*x;
+    r = C*x - C*z;
+    x = A*x + B*u;
+    z = A*z + B*u + L*r;
+    u = -K*x;
     
     plot_vectorx1(i) = x(1);
     plot_vectorz1(i) = z(1);
     plot_vectorx2(i) = x(2);
     plot_vectorz2(i) = z(2);
+    plot_vectorx3(i) = x(3);
+    plot_vectorz3(i) = z(3);
+    plot_vectorx4(i) = x(4);
+    plot_vectorz4(i) = z(4);
     plot_vectorxnorm(i) = norm(x,1);
     plot_vectorznorm(i) = norm(z,1);
 end
@@ -354,7 +479,7 @@ fontsize = 10;
 linewidth = 1;
 
 clf;
-subplot(2,2,1);
+subplot(2,3,1);
 hold on;
 plot(plot_vectorx1,'LineWidth',linewidth);
 plot(plot_vectorz1,'LineWidth',linewidth);
@@ -362,7 +487,7 @@ set(gca,'FontSize',fontsize)
 grid on;
 hold off;
 
-subplot(2,2,2);
+subplot(2,3,2);
 hold on;
 plot(plot_vectorx2,'LineWidth',linewidth);
 plot(plot_vectorz2,'LineWidth',linewidth);
@@ -370,7 +495,23 @@ set(gca,'FontSize',fontsize)
 grid on;
 hold off;
 
-subplot(2,2,3);
+subplot(2,3,3);
+hold on;
+plot(plot_vectorx3,'LineWidth',linewidth);
+plot(plot_vectorz3,'LineWidth',linewidth);
+set(gca,'FontSize',fontsize)
+grid on;
+hold off;
+
+subplot(2,3,4);
+hold on;
+plot(plot_vectorx4,'LineWidth',linewidth);
+plot(plot_vectorz4,'LineWidth',linewidth);
+set(gca,'FontSize',fontsize)
+grid on;
+hold off;
+
+subplot(2,3,5);
 hold on;
 plot(plot_vectorxnorm,'LineWidth',linewidth);
 plot(plot_vectorznorm,'LineWidth',linewidth);
