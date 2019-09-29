@@ -54,7 +54,7 @@ u_attack_map[0] = 1
 y_attack_map[0] = 1
 
 attackLen=1
-pattern= 10
+pattern= 1
 offset = 4
 start = 1
 isSat = 0
@@ -80,7 +80,7 @@ print("Finding minimum attack length for "+str(modelName)+" and pattern "+str(pa
 while isSat == 0:  
     print("attack length:"+str(attackLen)+"\n")
     index = start
-    while (index<patternLen) and (isSat == 0):
+    while (index<=patternLen) and (isSat == 0):
         # create drop pattern
         K = index + attackLen + offset
         dropPattern = np.ones((K), dtype=int)
@@ -135,22 +135,96 @@ while isSat == 0:
 
             decl+="r_"+str(i)+" = Real('r_"+str(i)+"')\n"
             f.write(decl)
-
+            
         f.write("\n")
         for varcount in range(1,x_count+1):
             f.write("s.add(x"+str(varcount)+"_0 == 0)\n")
             f.write("s.add(z"+str(varcount)+"_0 == 0)\n")
             f.write("s.add(xabs"+str(varcount)+"_0 == 0)\n")
-        for varcount in range(1,u_count+1):
-            f.write("s.add(u"+str(varcount)+"_0 == 0)\n")
-            f.write("s.add(uattacked"+str(varcount)+"_0 == 0)\n")
-        for varcount in range(1,y_count+1):
-            f.write("s.add(r"+str(varcount)+"_0 == 0)\n")
-        
+        f.write("\n")
+
         j = 0
         for i in range(K):
-            f.write("\n# pattern = "+str(dropPattern[i])+"\n")
+            f.write("# pattern = "+str(dropPattern[i])+"\n")
+            if dropPattern[i]==0:
+                expr_u=""
+                for varcount1 in range(1,u_count+1):
+                    expr_u+="s.add(u"+str(varcount1)+"_"+str(i)+" == u"+str(varcount1)+"_"+str(i-1)+")\n"
+                    expr_u+="s.add(uattacked"+str(varcount1)+"_"+str(i)+" == uattacked"+str(varcount1)+"_"+str(i-1)+")\n"
+                f.write(expr_u)
 
+                expr_r=""
+                for varcount1 in range(1,y_count+1):
+                    expr_r+="s.add(r"+str(varcount1)+"_"+str(i)+" == 0)\n"
+                f.write(expr_r)
+
+            else:
+                expr_u=""
+                for varcount1 in range(1,u_count+1):
+                    expr_u+="s.add(u"+str(varcount1)+"_"+str(i)+" == "
+                    for varcount2 in range(1,x_count+1):
+                        expr_u+=" - ("+str(Gain[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i)+")"
+                    expr_u+=")\n"
+                f.write(expr_u)
+                if i == (j+index):            
+                    expr_uatk=""
+                    for varcount1 in range(1,u_count+1):
+                        f.write("attackOnU"+str(varcount1)+"_"+str(i)+" = Real('attackOnU"+str(varcount1)+"_"+str(i)+"')\n")
+                        expr_uatk+="s.add(uattacked"+str(varcount1)+"_"+str(i)+" == u"+str(varcount1)+"_"+str(i)+"+ ("+str(u_attack_map[varcount1-1])+"*attackOnU"+str(varcount1)+"_"+str(i)+"))\n"
+                    f.write(expr_uatk)
+
+                    expr_y=""
+                    expr_r=""
+                    for varcount1 in range(1,y_count+1):
+                        f.write("attackOnY"+str(varcount1)+"_"+str(i)+" = Real('attackOnY"+str(varcount1)+"_"+str(i)+"')\n")
+                        expr_y+="s.add(y"+str(varcount1)+"_"+str(i)+" == ("+str(y_attack_map[varcount1-1])+"*attackOnY"+str(varcount1)+"_"+str(i)+")"
+                        expr_r+="s.add(r"+str(varcount1)+"_"+str(i)+" == y"+str(varcount1)+"_"+str(i)
+                        for varcount2 in range(1,x_count+1):
+                            expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i)+")"
+                            expr_r+=" - ("+str(C[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i)+")"
+                        for varcount3 in range(1,u_count+1):
+                            expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i)+")"         
+                            expr_r+=" - ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i)+")"   
+                        expr_y+=")\n"
+                        expr_r+=")\n"
+                    f.write(expr_y)
+                    f.write(expr_r)
+                    j = j+1
+                    if j== attackLen:
+                        j=0      
+                else:
+                    expr_uatk=""
+                    for varcount1 in range(1,u_count+1):
+                        expr_uatk+="s.add(uattacked"+str(varcount1)+"_"+str(i)+" == u"+str(varcount1)+"_"+str(i)+")\n"
+                    f.write(expr_uatk)
+                    expr_y=""
+                    expr_r=""
+                    for varcount1 in range(1,y_count+1):
+                        expr_y+="s.add(y"+str(varcount1)+"_"+str(i)+" == "
+                        expr_r+="s.add(r"+str(varcount1)+"_"+str(i)+" == y"+str(varcount1)+"_"+str(i)
+                        for varcount2 in range(1,x_count+1):
+                            expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i)+")"
+                            expr_r+=" - ("+str(C[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i)+")"
+                        for varcount3 in range(1,u_count+1):
+                            expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i)+")"         
+                            expr_r+=" - ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i)+")"   
+                        expr_y+=")\n"
+                        expr_r+=")\n"
+                    f.write(expr_y)
+                    f.write(expr_r)
+
+                expr_rabs = ""
+                expr_r = "s.add(r_"+str(i)+" ==" 
+                for varcount1 in range(1,y_count+1):
+                    expr_rabs+= "s.add(rabs"+str(varcount1)+"_"+str(i)+" == If(r"+str(varcount1)+"_"+str(i)+"<0,(-1)*r"+str(varcount1)+"_"+str(i)+",r"+str(varcount1)+"_"+str(i)+"))\n"
+                    expr_r+="rabs"+str(varcount1)+"_"+str(i)+" +"
+                expr_r = expr_r[:len(expr_r)-1] 
+                expr_r+=")\n"
+                f.write(expr_rabs)
+                f.write(expr_r)
+                
+                f.write("s.add(r_{0}<{1})\n".format(i,th))          
+                
             expr_x=""
             expr_xabs=""
             expr_z=""
@@ -176,112 +250,6 @@ while isSat == 0:
             f.write(expr_z)
             f.write(expr_x)
             f.write(expr_xabs)
-
-
-            if dropPattern[i]==0:
-                expr_u=""
-                for varcount1 in range(1,u_count+1):
-                    expr_u+="s.add(u"+str(varcount1)+"_"+str(i+1)+" == u"+str(varcount1)+"_"+str(i)+")\n"
-                    expr_u+="s.add(uattacked"+str(varcount1)+"_"+str(i+1)+" == uattacked"+str(varcount1)+"_"+str(i)+")\n"
-                f.write(expr_u)
-
-                expr_r=""
-                for varcount1 in range(1,y_count+1):
-                    expr_r+="s.add(r"+str(varcount1)+"_"+str(i+1)+" == 0)\n"
-                f.write(expr_r)
-
-            else:
-                expr_u=""
-                for varcount1 in range(1,u_count+1):
-                    expr_u+="s.add(u"+str(varcount1)+"_"+str(i+1)+" == "
-                    for varcount2 in range(1,x_count+1):
-                        expr_u+=" - ("+str(Gain[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i+1)+")"
-                    expr_u+=")\n"
-                f.write(expr_u)
-                if i == (j+index):            
-                    expr_uatk=""
-                    for varcount1 in range(1,u_count+1):
-                        f.write("attackOnU"+str(varcount1)+"_"+str(i+1)+" = Real('attackOnU"+str(varcount1)+"_"+str(i+1)+"')\n")
-                        expr_uatk+="s.add(uattacked"+str(varcount1)+"_"+str(i+1)+" == u"+str(varcount1)+"_"+str(i+1)+"+ ("+str(u_attack_map[varcount1-1])+"*attackOnU"+str(varcount1)+"_"+str(i+1)+"))\n"
-                    f.write(expr_uatk)
-
-                    expr_y=""
-                    expr_r=""
-                    for varcount1 in range(1,y_count+1):
-                        f.write("attackOnY"+str(varcount1)+"_"+str(i+1)+" = Real('attackOnY"+str(varcount1)+"_"+str(i+1)+"')\n")
-                        expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == ("+str(y_attack_map[varcount1-1])+"*attackOnY"+str(varcount1)+"_"+str(i+1)+")"
-                        expr_r+="s.add(r"+str(varcount1)+"_"+str(i+1)+" == y"+str(varcount1)+"_"+str(i+1)
-                        for varcount2 in range(1,x_count+1):
-                            expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
-                            expr_r+=" - ("+str(C[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i+1)+")"
-                        for varcount3 in range(1,u_count+1):
-                            expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")"         
-                            expr_r+=" - ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")"   
-                        expr_y+=")\n"
-                        expr_r+=")\n"
-                    f.write(expr_y)
-                    f.write(expr_r)
-                    j = j+1
-                    if j== attackLen:
-                        j=0      
-                else:
-                    expr_uatk=""
-                    for varcount1 in range(1,u_count+1):
-                        expr_uatk+="s.add(uattacked"+str(varcount1)+"_"+str(i+1)+" == u"+str(varcount1)+"_"+str(i+1)+")\n"
-                    f.write(expr_uatk)
-                    expr_y=""
-                    expr_r=""
-                    for varcount1 in range(1,y_count+1):
-                        expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == "
-                        expr_r+="s.add(r"+str(varcount1)+"_"+str(i+1)+" == y"+str(varcount1)+"_"+str(i+1)
-                        for varcount2 in range(1,x_count+1):
-                            expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
-                            expr_r+=" - ("+str(C[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i+1)+")"
-                        for varcount3 in range(1,u_count+1):
-                            expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")"         
-                            expr_r+=" - ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")"   
-                        expr_y+=")\n"
-                        expr_r+=")\n"
-                    f.write(expr_y)
-                    f.write(expr_r)
-
-                expr_rabs = ""
-                expr_r = "s.add(r_"+str(i+1)+" ==" 
-                for varcount1 in range(1,y_count+1):
-                    expr_rabs+= "s.add(rabs"+str(varcount1)+"_"+str(i+1)+" == If(r"+str(varcount1)+"_"+str(i+1)+"<0,(-1)*r"+str(varcount1)+"_"+str(i+1)+",r"+str(varcount1)+"_"+str(i+1)+"))\n"
-                    expr_r+="rabs"+str(varcount1)+"_"+str(i+1)+" +"
-                expr_r = expr_r[:len(expr_r)-1] 
-                expr_r+=")\n"
-                f.write(expr_rabs)
-                f.write(expr_r)
-                
-                f.write("s.add(r_{0}<{1})\n".format(i+1,th))          
-                
-            # expr_x=""
-            # expr_xabs=""
-            # expr_z=""
-            # for varcount1 in range(1,x_count+1):
-            #     expr_x+="s.add(x"+str(varcount1)+"_"+str(i+1)+" == "                
-            #     expr_z+="s.add(z"+str(varcount1)+"_"+str(i+1)+" == "
-            #     for varcount2 in range(1,x_count+1):
-            #         expr_x+=" ("+str(A[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i)+") +"
-            #         expr_z+=" ("+str(A[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i)+") +"
-            #     for varcount3 in range(1,u_count+1):
-            #         expr_z+=" ("+str(B[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i)+") +"
-            #         expr_x+=" ("+str(B[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i)+") +"
-            #     for varcount4 in range(1,y_count+1):
-            #         expr_z+=" ("+str(L[varcount1-1,varcount4-1])+"*r"+str(varcount4)+"_"+str(i)+") +"
-                
-            #     expr_xabs+="s.add(xabs"+str(varcount1)+"_"+str(i+1)+" == If(x"+str(varcount1)+"_"+str(i+1)+"<0,(-1)*x"+str(varcount1)+"_"+str(i+1)+",x"+str(varcount1)+"_"+str(i+1)+"))\n"
-
-            #     expr_x=expr_x[:len(expr_x)-1] 
-            #     expr_x = expr_x + ")\n"
-            #     expr_z=expr_z[:len(expr_z)-1] 
-            #     expr_z = expr_z + ")\n"            
-
-            # f.write(expr_z)
-            # f.write(expr_x)
-            # f.write(expr_xabs)
             
         f.write("s.add(Or(")
         assertion=""
