@@ -55,7 +55,7 @@ u_attack_map[0] = 1
 y_attack_map[0] = 1
 
 attackLen=1
-pattern= 1
+pattern= 10
 offset = 4
 start = 0
 isSat = 0
@@ -81,7 +81,7 @@ print("Finding minimum attack length for "+str(modelName)+" and pattern "+str(pa
 while isSat == 0:  
     print("attack length:"+str(attackLen)+"\n")
     index = start
-    while (index<=patternLen) and (isSat == 0):
+    while (index<patternLen) and (isSat == 0):
         # create drop pattern
         K = index + attackLen + offset
         dropPattern = np.ones((K), dtype=int)
