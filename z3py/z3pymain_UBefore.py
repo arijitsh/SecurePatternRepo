@@ -158,6 +158,10 @@ while isSat == 0:
                     expr_r+="s.add(r"+str(varcount1)+"_"+str(i)+" == 0)\n"
                 f.write(expr_r)
 
+                if i == (j+index): 
+                    j = j + 1
+                    if j== attackLen:
+                        j=0 
             else:
                 expr_u=""
                 for varcount1 in range(1,u_count+1):
