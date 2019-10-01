@@ -2,9 +2,15 @@
 import os
 import numpy as np
 import errno
-
+############################## inputs ############################
 modelName = "powersystem"
 
+################## attack length and position ###################
+attackLen=1
+pattern= 110
+offset = 4
+start = 0
+####################################################################
 if modelName == "tempControl":
     modelName= "tempControl"
     A= np.matrix('0.94648514795348381856143760160194 0.0018971440127071483982418298452899;0 0.000000000013887943864964020896356969649573')
@@ -47,17 +53,12 @@ u_count=B.shape[1]
 x_count=A.shape[1]
 y_count=C.shape[0]
 
+######### Configure which sensor/control input to attack ##########
 u_attack_map = np.zeros(u_count,dtype=float)
 y_attack_map = np.zeros(y_count,dtype=float)
-
-####### Configure which sensor/control input to attack ########
 u_attack_map[0] = 1
 y_attack_map[0] = 1
 
-attackLen=1
-pattern= 10
-offset = 4
-start = 0
 isSat = 0
 
 #Compute pattern length
@@ -94,7 +95,7 @@ while isSat == 0:
                     j = 0
         print("drop pattern:")
         print(dropPattern)
-
+        print("\n")
         fileName = modelName + "_"+str(index)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".py"
         f = open(path+fileName, "w+")
         f.write("from z3 import *\n")
@@ -417,16 +418,19 @@ while isSat == 0:
         f.write("if isSat==1:\n")
         f.write("\tf0 = open(\""+path+modelName+".z3result\", \"w+\")\n")
         f.write("\tf0.write(\"1\")\n")
-        f.write("\tf0.close()\n")        
+        f.write("\tf0.close()\n")
 
         f.close()
         os.system("python "+path+fileName+">"+path+fileName+".z3out")
-
         f0 = open(path+modelName+".z3result", "r")
         if f0.mode == 'r':
             content = f0.read()
             isSat = int(content)
         f0.close()
+        if isSat==0:
+            os.system("rm -rf "+path+fileName+" "+path+fileName+".z3out")
+        else:
+            print("go to "+path+fileName+".z3out \n")
 
         index = index + 1
     attackLen = attackLen + 1
