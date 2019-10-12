@@ -7,7 +7,7 @@ modelName = "powersystem"
 
 ################## attack length and position ###################
 attackLen=1
-pattern= 1000100
+pattern= 10
 offset = 4
 start = 0
 ####################################################################
@@ -20,7 +20,7 @@ if modelName == "tempControl":
     Gain= np.matrix('-0.3712408426327057364702000086254 -0.0007441187601164687840174516431091')
     L= np.matrix('0.60711740001928504728567759229918;0.39288259998275032458536770718638')
     safex = [30,30]
-    upperSafex = [1,1]
+    tolerance = [1,1]
     th = 0.00001
 elif modelName == "powersystem":
     A= np.matrix('0.66 0.53;-0.53 0.13')
@@ -30,7 +30,8 @@ elif modelName == "powersystem":
     Gain= np.matrix('0.0556 0.3306')
     L= np.matrix('0.36 0.27;  -0.31 0.08')
     safex = [0.1,0.05]
-    upperSafex = [0.001,0.0001]
+    tolerance = [0.001,0.0001]
+    initialRange = np.matrix('0 0.35;-4 4')
     th = 0.03
 elif modelName == "plant":
     A= np.matrix('2.6221    0.3197    1.8335   -1.0664; -0.2381    0.1872   -0.1361    0.2017; 0.1612    0.7888    0.2859    0.6064;-0.1035    0.7641    0.0886    0.7360')
@@ -40,7 +41,7 @@ elif modelName == "plant":
     Gain= np.matrix('-0.2580    0.3159   -0.1087    0.3982; -1.6195   -0.1314   -1.1232    0.7073')
     L= np.matrix('2.4701   -0.0499; -0.2144    0.0224; 0.2327    0.0946; -0.0192    0.1004')
     safex = [0.01,0.01,0.01,0.01]
-    upperSafex = [0.0001,0.0001,0.0001,0.0001]
+    tolerance = [0.0001,0.0001,0.0001,0.0001]
     th = 0.0001
 elif modelName == "powergrid":
     A= np.matrix('-1 -3;3 -5')
@@ -50,7 +51,7 @@ elif modelName == "powergrid":
     Gain= np.matrix('2.9846   -4.9827;6.9635   -6.9599')
     L= np.matrix('-1.1751   -0.1412;-2.6599    2.2549')
     safex = [0.1,0.2]
-    upperSafex = [0.001,0.001]
+    tolerance = [0.001,0.001]
     th = 0.05
 
 ################## creating the path to save results #################
@@ -152,9 +153,10 @@ while isSat == 0:
             
         f.write("\n")
         for varcount in range(1,x_count+1):
-            f.write("s.add(x"+str(varcount)+"_0 == 0)\n")
+            f.write("s.add(x"+str(varcount)+"_0 >= "+str(initialRange[varcount-1,0])+")\n")
+            f.write("s.add(x"+str(varcount)+"_0 <= "+str(initialRange[varcount-1,1])+")\n")
             f.write("s.add(z"+str(varcount)+"_0 == 0)\n")
-            f.write("s.add(xabs"+str(varcount)+"_0 == 0)\n")
+            f.write("s.add(xabs"+str(varcount)+"_0 == If(x"+str(varcount)+"_0<0,(-1)*x"+str(varcount)+"_0,x"+str(varcount)+"_0))\n")
         f.write("\n")
 
         j = 0
@@ -277,7 +279,7 @@ while isSat == 0:
         assertion=""
         for varcount in range(1,x_count+1):
             for i in range(K):
-                assertion+="(xabs"+str(varcount)+"_"+str(i)+" - "+str(safex[varcount-1])+")>"+str(upperSafex[varcount-1])+","
+                assertion+="(xabs"+str(varcount)+"_"+str(i)+" - "+str(safex[varcount-1])+")>"+str(tolerance[varcount-1])+","
         assertion = assertion[:len(assertion)-1]
         f.write(assertion)
         f.write("))\n")
@@ -443,6 +445,5 @@ while isSat == 0:
             os.system("rm -rf "+path+fileName+" "+path+fileName+".z3out")
         else:
             print("go to "+path+fileName+".z3out \n")
-
         index = index + 1
     attackLen = attackLen + 1

@@ -2,15 +2,9 @@
 import os
 import numpy as np
 import errno
-############################## inputs ############################
+
 modelName = "powersystem"
 
-################## attack length and position ###################
-attackLen=1
-pattern= 1000100
-offset = 4
-start = 0
-####################################################################
 if modelName == "tempControl":
     modelName= "tempControl"
     A= np.matrix('0.94648514795348381856143760160194 0.0018971440127071483982418298452899;0 0.000000000013887943864964020896356969649573')
@@ -19,9 +13,8 @@ if modelName == "tempControl":
     D= np.matrix('0')
     Gain= np.matrix('-0.3712408426327057364702000086254 -0.0007441187601164687840174516431091')
     L= np.matrix('0.60711740001928504728567759229918;0.39288259998275032458536770718638')
-    safex = [30,30]
-    upperSafex = [1,1]
-    th = 0.00001
+    safex = [0.01,0.01]
+    th = 0.005
 elif modelName == "powersystem":
     A= np.matrix('0.66 0.53;-0.53 0.13')
     B= np.matrix('0.34;0.53')
@@ -30,7 +23,6 @@ elif modelName == "powersystem":
     Gain= np.matrix('0.0556 0.3306')
     L= np.matrix('0.36 0.27;  -0.31 0.08')
     safex = [0.1,0.05]
-    upperSafex = [0.001,0.0001]
     th = 0.03
 elif modelName == "plant":
     A= np.matrix('2.6221    0.3197    1.8335   -1.0664; -0.2381    0.1872   -0.1361    0.2017; 0.1612    0.7888    0.2859    0.6064;-0.1035    0.7641    0.0886    0.7360')
@@ -40,18 +32,7 @@ elif modelName == "plant":
     Gain= np.matrix('-0.2580    0.3159   -0.1087    0.3982; -1.6195   -0.1314   -1.1232    0.7073')
     L= np.matrix('2.4701   -0.0499; -0.2144    0.0224; 0.2327    0.0946; -0.0192    0.1004')
     safex = [0.01,0.01,0.01,0.01]
-    upperSafex = [0.0001,0.0001,0.0001,0.0001]
     th = 0.0001
-elif modelName == "powergrid":
-    A= np.matrix('-1 -3;3 -5')
-    B= np.matrix('2 -1;1 0')
-    C= np.matrix('0.8 2.4;1.6 0.8')
-    D= np.matrix('0 0; 0 0')
-    Gain= np.matrix('2.9846   -4.9827;6.9635   -6.9599')
-    L= np.matrix('-1.1751   -0.1412;-2.6599    2.2549')
-    safex = [0.1,0.2]
-    upperSafex = [0.001,0.001]
-    th = 0.05
 
 ################## creating the path to save results #################
 path="../results/z3/"+modelName+"/"
@@ -65,12 +46,17 @@ u_count=B.shape[1]
 x_count=A.shape[1]
 y_count=C.shape[0]
 
-######### Configure which sensor/control input to attack ##########
 u_attack_map = np.zeros(u_count,dtype=float)
 y_attack_map = np.zeros(y_count,dtype=float)
+
+####### Configure which sensor/control input to attack ########
 u_attack_map[0] = 1
 y_attack_map[0] = 1
 
+attackLen=1
+pattern= 1
+offset = 4
+start = 0
 isSat = 0
 
 #Compute pattern length
@@ -107,8 +93,8 @@ while isSat == 0:
                     j = 0
         print("drop pattern:")
         print(dropPattern)
-        print("\n")
-        fileName = modelName + "_" + str(th) + "_" +str(index)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".py"
+
+        fileName = modelName + "_"+str(index)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".py"
         f = open(path+fileName, "w+")
         f.write("from z3 import *\n")
         f.write("import math\n")
@@ -180,12 +166,8 @@ while isSat == 0:
                 expr_u=""
                 for varcount1 in range(1,u_count+1):
                     expr_u+="s.add(u"+str(varcount1)+"_"+str(i)+" == "
-                    if i==0:
-                        for varcount2 in range(1,x_count+1):
-                            expr_u+="0"
-                    else:
-                        for varcount2 in range(1,x_count+1):
-                            expr_u+=" - ("+str(Gain[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i-1)+")"
+                    for varcount2 in range(1,x_count+1):
+                        expr_u+=" - ("+str(Gain[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i)+")"
                     expr_u+=")\n"
                 f.write(expr_u)
                 if i == (j+index):            
@@ -277,7 +259,7 @@ while isSat == 0:
         assertion=""
         for varcount in range(1,x_count+1):
             for i in range(K):
-                assertion+="(xabs"+str(varcount)+"_"+str(i)+" - "+str(safex[varcount-1])+")>"+str(upperSafex[varcount-1])+","
+                assertion+="xabs"+str(varcount)+"_"+str(i)+">"+str(safex[varcount-1])+","
         assertion = assertion[:len(assertion)-1]
         f.write(assertion)
         f.write("))\n")
@@ -430,19 +412,16 @@ while isSat == 0:
         f.write("if isSat==1:\n")
         f.write("\tf0 = open(\""+path+modelName+".z3result\", \"w+\")\n")
         f.write("\tf0.write(\"1\")\n")
-        f.write("\tf0.close()\n")
+        f.write("\tf0.close()\n")        
 
         f.close()
         os.system("python "+path+fileName+">"+path+fileName+".z3out")
+
         f0 = open(path+modelName+".z3result", "r")
         if f0.mode == 'r':
             content = f0.read()
             isSat = int(content)
         f0.close()
-        if isSat==0:
-            os.system("rm -rf "+path+fileName+" "+path+fileName+".z3out")
-        else:
-            print("go to "+path+fileName+".z3out \n")
 
         index = index + 1
     attackLen = attackLen + 1
