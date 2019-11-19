@@ -7,7 +7,7 @@ modelName = "powersystem"
 
 ################## attack length and position ###################
 attackLen=1
-pattern= 101
+pattern= 1
 offset = 4
 start = 0
 isSat = 0
@@ -54,7 +54,7 @@ elif modelName == "powergrid":
     L= np.matrix('-1.1751   -0.1412;-2.6599    2.2549')
     safex = [0.1,0.2]
     tolerance = [0.001,0.001]
-    th = 0.05
+    th = 0.01
 
 ################## creating the path to save results #################
 path="../results/z3/"+modelName+"/"
@@ -249,7 +249,7 @@ while isSat == 0:
                         for varcount2 in range(1,x_count+1):
                             expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
                         for varcount3 in range(1,u_count+1):
-                            expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")" 
+                            expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")" 
                         expr_y+=")\n"
                     f.write(expr_y)
                     j = j+1
@@ -266,7 +266,7 @@ while isSat == 0:
                         for varcount2 in range(1,x_count+1):
                             expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
                         for varcount3 in range(1,u_count+1):
-                            expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")"         
+                            expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")"         
                         expr_y+=")\n"
                     f.write(expr_y)
             else:
