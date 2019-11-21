@@ -7,8 +7,7 @@ modelName = "powersystem"
 
 ################## attack length and position ###################
 attackLen = 1
-secPeriod = 5
-pattern = 1
+pattern = 11110
 offset = 4
 start = 0
 isSat = 0
@@ -240,18 +239,42 @@ while isSat == 0:
                             expr_u+=" - ("+str(Gain[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i+1)+")"
                     expr_u+=")\n"
                 f.write(expr_u)
-                if (i == (j+index)) and (i%secPeriod!=0):      # If in this iteration we can give an attack      
+                if i == (j+index):      # If in this iteration we can give an attack      
                     expr_uatk=""
                     for varcount1 in range(1,u_count+1):
                         f.write("attackOnU"+str(varcount1)+"_"+str(i)+" = Real('attackOnU"+str(varcount1)+"_"+str(i)+"')\n")
                         expr_uatk+="s.add(uattacked"+str(varcount1)+"_"+str(i+1)+" == u"+str(varcount1)+"_"+str(i+1)+"+ ("+str(u_attack_map[varcount1-1])+"*attackOnU"+str(varcount1)+"_"+str(i)+"))\n"
-                    f.write(expr_uatk)  
+                    f.write(expr_uatk)
+
+                    # expr_y=""
+                    # for varcount1 in range(1,y_count+1):
+                    #     f.write("attackOnY"+str(varcount1)+"_"+str(i)+" = Real('attackOnY"+str(varcount1)+"_"+str(i)+"')\n")
+                    #     expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == ("+str(y_attack_map[varcount1-1])+"*attackOnY"+str(varcount1)+"_"+str(i)+")"
+                    #     for varcount2 in range(1,x_count+1):
+                    #         expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
+                    #     for varcount3 in range(1,u_count+1):
+                    #         expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")" 
+                    #     expr_y+=")\n"
+                    # f.write(expr_y)
+                    
+                    # j = j+1
+                    # if j== attackLen:
+                    #     j=0      
 
                 else: # If attack len exhausted
                     expr_uatk=""
                     for varcount1 in range(1,u_count+1):
                         expr_uatk+="s.add(uattacked"+str(varcount1)+"_"+str(i+1)+" == u"+str(varcount1)+"_"+str(i+1)+")\n"
                     f.write(expr_uatk)
+                    # expr_y=""
+                    # for varcount1 in range(1,y_count+1):
+                    #     expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == "
+                    #     for varcount2 in range(1,x_count+1):
+                    #         expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
+                    #     for varcount3 in range(1,u_count+1):
+                    #         expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")"         
+                    #     expr_y+=")\n"
+                    # f.write(expr_y)
             else:
                 expr_u=""
                 for varcount1 in range(1,u_count+1):
@@ -259,8 +282,18 @@ while isSat == 0:
                     expr_u+="s.add(uattacked"+str(varcount1)+"_"+str(i+1)+" == uattacked"+str(varcount1)+"_"+str(i)+")\n"
                 f.write(expr_u)
 
+                # expr_y=""
+                # for varcount1 in range(1,y_count+1):
+                #     expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == 0)\n"
+                # f.write(expr_y)
+
+                # if i == (j+index): 
+                #     j = j + 1
+                #     if j == attackLen:
+                #         j=0
+
             # Update y
-            if (i == (j+index)) and (i%secPeriod!=0):
+            if i == (j+index):
                 expr_y=""
                 for varcount1 in range(1,y_count+1):
                     f.write("attackOnY"+str(varcount1)+"_"+str(i)+" = Real('attackOnY"+str(varcount1)+"_"+str(i)+"')\n")
