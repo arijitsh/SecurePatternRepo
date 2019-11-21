@@ -94,7 +94,7 @@ while patternTemp>0:
     patternTemp=patternTemp//10
     i = i-1
 
-f0 = open(path+modelName+".z3result", "w+")
+f0 = open(path+modelName+"_sporadic.z3result", "w+")
 f0.write("0")
 f0.close()
 
@@ -302,7 +302,7 @@ while isSat == 0:
         f.write("else:\n")
         f.write("\tprint(s.check())\n")
         f.write("\tisSat = 1\n")
-        f.write("\tf0 = open(\""+path+modelName+".z3result\", \"w+\")\n")
+        f.write("\tf0 = open(\""+path+modelName+"_sporadic.z3result\", \"w+\")\n")
         f.write("\tf0.write(\"1\")\n")
         f.write("\tf0.close()\n") 
         f.write("\tm = s.model()\n")
@@ -441,13 +441,13 @@ while isSat == 0:
             f.write("print(attackOnY{0})\n".format(varcount))
    
         f.write("if isSat==1:\n")
-        f.write("\tf0 = open(\""+path+modelName+".z3result\", \"w+\")\n")
+        f.write("\tf0 = open(\""+path+modelName+"_sporadic.z3result\", \"w+\")\n")
         f.write("\tf0.write(\"1\")\n")
         f.write("\tf0.close()\n")
 
         f.close()
         os.system("python "+path+fileName+">"+path+fileName+".z3out")
-        f0 = open(path+modelName+".z3result", "r")
+        f0 = open(path+modelName+"_sporadic.z3result", "r")
         if f0.mode == 'r':
             content = f0.read()
             isSat = int(content)
