@@ -98,7 +98,7 @@ f0 = open(path+modelName+".z3result", "w+")
 f0.write("0")
 f0.close()
 
-print("Finding minimum attack length for "+str(modelName)+" and pattern "+str(pattern))
+print("Finding minimum attack length for "+str(modelName)+" and pattern "+str(pattern)+" with sporadic security of period "+str(secPeriod))
 
 while isSat == 0:  
     print("attack length:"+str(attackLen)+"\n")
@@ -117,7 +117,7 @@ while isSat == 0:
         print("drop pattern:")
         print(dropPattern)
         print("\n")
-        fileName = modelName + "_procFreeOnly_" + str(th) + "_" +str(index)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".py"
+        fileName = modelName + "_sporadic_" + str(th) + "_" +str(index)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+"_"+str(secPeriod)+".py"
         f = open(path+fileName, "w+")
         f.write("from z3 import *\n")
         f.write("import math\n")
@@ -271,6 +271,7 @@ while isSat == 0:
                         expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")" 
                     expr_y+=")\n"
                 f.write(expr_y)
+            if (i == (j+index)):
                 j = j+1
                 if j== attackLen:
                     j=0  
