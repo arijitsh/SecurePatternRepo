@@ -83,7 +83,6 @@ for pattern in set(patternList):
         i = i-1
 
     ####### Compute inner circle ##########################################################
-    # innerCircle = np.zeros(x_count, dtype=float)
     innerCircle = []
     for i in range(x_count):
         innerCircle.append(outerCircle[i]*innerCircleDepth)
@@ -232,44 +231,6 @@ for pattern in set(patternList):
                     expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")"         
                 expr_y+=")\n"
             f.write(expr_y)
-
-
-            # if dropPattern[i]==0:
-            #     expr_u=""
-            #     for varcount1 in range(1,u_count+1):
-            #         expr_u+="s.add(u"+str(varcount1)+"_"+str(i)+" == u"+str(varcount1)+"_"+str(i-1)+")\n"
-            #     f.write(expr_u)
-
-            # else:
-            #     expr_u=""
-            #     for varcount1 in range(1,u_count+1):
-            #         expr_u+="s.add(u"+str(varcount1)+"_"+str(i)+" == "
-            #         if i==0:
-            #             for varcount2 in range(1,x_count+1):
-            #                 expr_u+="0"
-            #         else:
-            #             for varcount2 in range(1,x_count+1):
-            #                 expr_u+=" - ("+str(Gain[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i-1)+")"
-            #         expr_u+=")\n"
-            #     f.write(expr_u)
-           
-                
-            # expr_x=""
-            # expr_xabs=""
-            # for varcount1 in range(1,x_count+1):
-            #     expr_x+="s.add(x"+str(varcount1)+"_"+str(i+1)+" == "    
-            #     for varcount2 in range(1,x_count+1):
-            #         expr_x+=" ("+str(A[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i)+") +"
-            #     for varcount3 in range(1,u_count+1):
-            #         expr_x+=" ("+str(B[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i)+") +"
-                
-            #     expr_xabs+="s.add(xabs"+str(varcount1)+"_"+str(i+1)+" == If(x"+str(varcount1)+"_"+str(i+1)+"<0,(-1)*x"+str(varcount1)+"_"+str(i+1)+",x"+str(varcount1)+"_"+str(i+1)+"))\n"
-
-            #     expr_x=expr_x[:len(expr_x)-1] 
-            #     expr_x = expr_x + ")\n"          
-
-            # f.write(expr_x)
-            # f.write(expr_xabs)
             
         f.write("s.add(Or(")
         assertion=""
@@ -304,7 +265,6 @@ for pattern in set(patternList):
         f0.close()
         print("isSat="+str(isSat))
         if isSat==1:
-            # print("still in outerCircle")
             os.system("rm -rf "+path+fileName+" "+path+fileName+".z3out")
         else:
             print("go to "+path+fileName+".z3out \n")
