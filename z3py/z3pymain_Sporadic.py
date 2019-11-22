@@ -492,7 +492,7 @@ except OSError as err:
 
 minAttackLenPeriodic = FindMinimumAttackLem(modelName,pattern,sporadicity)
 final = open(path+modelName+"_final_sporadic.result", "a+")
-final.write(str(pattern) + ": spor :" + str(sporadicity-1)+" min attackLen :"+str(minAttackLenPeriodic)+"\n")
+final.write(str(pattern) + ": spor :" + str(sporadicity)+" min attackLen :"+str(minAttackLenPeriodic)+"\n")
 final.close()
 
 for pattern in set(patternList):
