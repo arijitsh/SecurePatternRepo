@@ -65,6 +65,16 @@ def FindMinimumAttackLem(modelName, pattern, sporadicity):
         safex = [0.1,0.2]
         tolerance = [0.001,0.001]
         th = 0.01    
+    elif modelName == "trajectoryTracker":
+        A= np.matrix('-1 -3;3 -5')
+        B= np.matrix('2 -1;1 0')
+        C= np.matrix('0.8 2.4;1.6 0.8')
+        D= np.matrix('0 0; 0 0')
+        Gain= np.matrix('2.9846   -4.9827;6.9635   -6.9599')
+        L= np.matrix('-1.1751   -0.1412;-2.6599    2.2549')
+        safex = [0.1,0.2]
+        tolerance = [0.001,0.001]
+        th = 0.01    
     
     ################## creating the path to save results #################
     path="../results/z3/"+modelName+"/"
