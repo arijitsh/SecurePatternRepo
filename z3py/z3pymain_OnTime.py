@@ -25,11 +25,11 @@ elif modelName == "trajectory":
     B= np.matrix('0.0050;0.1000')
     C= np.matrix('1 0')
     D= np.matrix('0')
-    Gain= np.matrix('39.3471    8.8710')
-    L = np.matrix('0.4400;0.8000')
+    Gain= np.matrix('16.0302    5.6622')  # settling time around 10
+    L = np.matrix('1.8721;9.6532')
     outerCircle = [1,10]
     th = 0.05
-    maxIteration = 40
+    maxIteration = 30
 elif modelName == "esp":
     A= np.matrix('0.4450 -0.0458;1.2939 0.4402')
     B= np.matrix('0.0550;4.5607')
