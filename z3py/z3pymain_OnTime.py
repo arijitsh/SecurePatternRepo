@@ -6,7 +6,7 @@ import errno
 modelName = "trajectory"
 
 ################## attack length and position ###################
-#patternList = [10,110, 110,1100,110100,110010,1011,11100,100011,1011100,1010011,10001011,10001110,10111,100111,1000111,10000111,10100111,10111100,100010111,100011110,1000011110,1000100111,1000111100,100010100111,100010111100,100010010111,100010011110,100011110100,100011110010]
+# patternList = [1]
 patternList = [10,110100,100011,110010,1100,11100,1011100,1010011,110,1011] # first 6 odwn_time=4, rest=3
 start = 1
 innerCircleDepth = 0.1
@@ -21,15 +21,15 @@ if modelName == "tempControl":
     L= np.matrix('0.60711740001928504728567759229918;0.39288259998275032458536770718638')
     outerCircle = [30,30]
 elif modelName == "trajectory":
-    A= np.matrix('1.0000    0.2000;0    1.0000')
-    B= np.matrix('0.0200;0.2000')
+    A= np.matrix('1.0000    0.1000;0    1.0000')
+    B= np.matrix('0.0050;0.1000')
     C= np.matrix('1 0')
     D= np.matrix('0')
-    Gain= np.matrix('22.8788    6.7644')
-    L = np.matrix('0.8449;1.2835')
+    Gain= np.matrix('39.3471    8.8710')
+    L = np.matrix('0.4400;0.8000')
     outerCircle = [1,10]
-    #tolerance = [0.1,0.1]
     th = 0.05
+    maxIteration = 40
 elif modelName == "esp":
     A= np.matrix('0.4450 -0.0458;1.2939 0.4402')
     B= np.matrix('0.0550;4.5607')
@@ -105,6 +105,7 @@ for pattern in set(patternList):
     print("Finding IDS on time for "+str(modelName)+" and pattern "+str(pattern) + " with inner circle depth = "+str(innerCircleDepth))
     K = start
     isSat = 1
+    isBreak = 0
     while isSat == 1:  
         print("Checking iteration len:"+str(K))
         # create drop pattern    
@@ -280,7 +281,10 @@ for pattern in set(patternList):
         else:
             print("go to "+path+fileName+".z3out \n")
         K = K + 1
+        if K>maxIteration:
+            isBreak = 1
+            break
 
     final = open(path+modelName+"_final_ontime.result", "a+")
-    final.write(str(pattern) + ":" + str(K-1)+"\n")
+    final.write(str(pattern) + ":" + str(K-1)+" isBreak:"+str(isBreak)+"\n")
     final.close()

@@ -30,23 +30,23 @@
 % Ts=0.1;
 
 % Double integrator
-% A = [0 1;
-%       0 0];
-% B = [0;
-%       1];
-% C = [1 0];
-% D = 0;
-% dimension=size(A,1);
-% Ts=0.2;
+A = [0 1;
+      0 0];
+B = [0;
+      1];
+C = [1 0];
+D = 0;
+dimension=size(A,1);
+Ts=0.1;
 
 %Cruise Control (from CTMS)
-A = -0.0500
-B = 0.001
-C = 1
-D = 0
-
-dimension=size(A,1);
-Ts=0.01;
+% A = -0.0500
+% B = 0.001
+% C = 1
+% D = 0
+% 
+% dimension=size(A,1);
+% Ts=0.01;
 
 plant = ss(A, B, C, D);
 [dim_s,dim_i]=size(B);       
