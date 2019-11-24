@@ -5,7 +5,34 @@ import errno
 isDelayed = 0
 innerCircleDepth = 0.1
 patternList = [10, 110, 110,1100,110100,110010,1011,11100,100011,1011100,1010011,10001011,10001110,10111,100111,1000111,10000111,10100111,10111100,100010111,100011110,1000010111,1000011110,1000100111,1000111100,100010100111,100010111100,100010010111,100010011110,100011110100,100011110010]
+modelName = "trajectory"
+pattern = 1
+sporadicity = 5
 
+path="../results/z3/"+modelName+"/"
+try:
+    os.makedirs(path)
+except OSError as err:
+    if err.errno!= errno.EEXIST:
+        raise
+
+# minimum attck length for periodic
+minAttackLenPeriodic = FindMinimumAttackLem(modelName,pattern,sporadicity)
+final = open(path+modelName+"_final_sporadic.result", "a+")
+final.write(str(pattern) + ": spor :" + str(sporadicity)+" min attackLen :"+str(minAttackLenPeriodic)+"\n")
+final.close()
+
+# min attack length calc for patterns
+for pattern in set(patternList):
+    newAttackLen =  minAttackLenPeriodic
+    while newAttackLen>= minAttackLenPeriodic:
+        newAttackLen = FindMinimumAttackLem(modelName,pattern,sporadicity)
+        sporadicity = sporadicity + 1
+    final = open(path+modelName+"_final_sporadic.result", "a+")
+    final.write(str(pattern) + ": spor :" + str(sporadicity-1)+" min attackLen :"+str(newAttackLen)+"\n")
+    final.close()
+
+# function 
 def FindMinimumAttackLem(modelName, pattern, sporadicity):
     attackLen = 1
     offset = 4
@@ -34,6 +61,16 @@ def FindMinimumAttackLem(modelName, pattern, sporadicity):
         safex = [1,2]
         tolerance = [0.1,0.1]
         th = 0.003
+    elif modelName == "trajectory":
+        A= np.matrix('1.0000    0.2000;0    1.0000')
+        B= np.matrix('0.0200;0.2000')
+        C= np.matrix('1 0')
+        D= np.matrix('0')
+        Gain= np.matrix('22.8788    6.7644')
+        L = np.matrix('0.8449;1.2835')
+        safex = [1,10]
+        tolerance = [0.1,0.1]
+        th = 0.05
     elif modelName == "powersystem":
         A= np.matrix('0.66 0.53;-0.53 0.13')
         B= np.matrix('0.34;0.53')
@@ -56,6 +93,16 @@ def FindMinimumAttackLem(modelName, pattern, sporadicity):
         tolerance = [0.0001,0.0001,0.0001,0.0001]
         th = 0.0001
     elif modelName == "powergrid":
+        A= np.matrix('-1 -3;3 -5')
+        B= np.matrix('2 -1;1 0')
+        C= np.matrix('0.8 2.4;1.6 0.8')
+        D= np.matrix('0 0; 0 0')
+        Gain= np.matrix('2.9846   -4.9827;6.9635   -6.9599')
+        L= np.matrix('-1.1751   -0.1412;-2.6599    2.2549')
+        safex = [0.1,0.2]
+        tolerance = [0.001,0.001]
+        th = 0.01    
+    elif modelName == "trajectoryTracker":
         A= np.matrix('-1 -3;3 -5')
         B= np.matrix('2 -1;1 0')
         C= np.matrix('0.8 2.4;1.6 0.8')
@@ -468,28 +515,3 @@ def FindMinimumAttackLem(modelName, pattern, sporadicity):
         attackLen = attackLen + 1
 
     return (attackLen-1)
-
-modelName = "powersystem"
-pattern = 1
-sporadicity = 5
-
-path="../results/z3/"+modelName+"/"
-try:
-    os.makedirs(path)
-except OSError as err:
-    if err.errno!= errno.EEXIST:
-        raise
-
-minAttackLenPeriodic = FindMinimumAttackLem(modelName,pattern,sporadicity)
-final = open(path+modelName+"_final_sporadic.result", "a+")
-final.write(str(pattern) + ": spor :" + str(sporadicity)+" min attackLen :"+str(minAttackLenPeriodic)+"\n")
-final.close()
-
-for pattern in set(patternList):
-    newAttackLen =  minAttackLenPeriodic
-    while newAttackLen>= minAttackLenPeriodic:
-        newAttackLen = FindMinimumAttackLem(modelName,pattern,sporadicity)
-        sporadicity = sporadicity + 1
-    final = open(path+modelName+"_final_sporadic.result", "a+")
-    final.write(str(pattern) + ": spor :" + str(sporadicity-1)+" min attackLen :"+str(newAttackLen)+"\n")
-    final.close()
