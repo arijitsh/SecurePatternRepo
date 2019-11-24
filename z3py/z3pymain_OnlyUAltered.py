@@ -3,11 +3,12 @@ import os
 import numpy as np
 import errno
 ############################## inputs ############################
-modelName = "trajectory"
+modelName = "esp"
 
 ################## attack length and position ###################
 attackLen = 1
-patternList = [1,10,110, 110,1100,110100,110010,1011,11100,100011,1011100,1010011,10001011,10001110,10111,100111,1000111,10000111,10100111,10111100,100010111,100011110,1000010111,1000011110,1000100111,1000111100,100010100111,100010111100,100010010111,100010011110,100011110100,100011110010]
+patternList = [1]
+# patternList = [1,10,110, 110,1100,110100,110010,1011,11100,100011,1011100,1010011,10001011,10001110,10111,100111,1000111,10000111,10100111,10111100,100010111,100011110,1000010111,1000011110,1000100111,1000111100,100010100111,100010111100,100010010111,100010011110,100011110100,100011110010]
 offset = 4
 start = 0
 isSat = 0
@@ -42,8 +43,9 @@ elif modelName == "esp":
     D= np.matrix('0')
     Gain= np.matrix('-0.0987 0.1420')
     L= np.matrix('-0.0390;0.4339')
-    safex = [1,2]
-    tolerance = [0.1,0.1]
+    SensorRange = np.matrix('-0.2 0.2')
+    safex = [0.2,0.4]
+    tolerance = [0.01,0.01]
     th = 0.003
 elif modelName == "powersystem":
     A= np.matrix('0.66 0.53;-0.53 0.13')
@@ -341,6 +343,12 @@ for pattern in set(patternList):
                             expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")"         
                         expr_y+=")\n"
                     f.write(expr_y)
+                
+                expr_range = "s.add(And("
+                for varcount1 in range(1,y_count+1):
+                    expr_range += "y"+str(varcount1)+"_"+str(i+1)+" >= " + str(SensorRange[varcount1-1,0]) + ", y"+str(varcount1)+"_"+str(i+1)+" <= " + str(SensorRange[varcount1-1,1])
+                expr_range = "))"
+                f.write(expr_range)
 
             f.write("s.add(Or(")
             assertion=""
