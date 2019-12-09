@@ -60,7 +60,7 @@ RN = eye(size(C,1));
 [KEST,L,P,M,Z] = kalman(sys_d,QN,RN)
 abs(eig(A - L*C))
 
-time = 3;
+time = 5;
 pattern = ones(1,time);
 % subseq = [1 0];
 % repeat = ceil(size(pattern,2)/size(subseq,2));
@@ -193,47 +193,43 @@ for i=1:time
     plot_rnorm_10(i) = r_norm;
 end
 
-fontsize = 10;
-linewidth = 1;
-
 sideslip_final_10 = [sideslip_prev_10 plot_sideslip_10];
 yawrate_final_10 = [yawrate_prev_10 plot_yaw_10];
 r_final_10 = [r_prev_10 plot_rnorm_10];
 
 
-
-
-
-
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fontsize = 40;
+linewidth = 2;
 
 subplot(1,2,1);
 hold on;
-plot(plot_safesideslip,'r','LineWidth',linewidth);
-plot(sideslip_final_10,'r--','LineWidth',linewidth);
-plot(plot_safeyawrate,'b','LineWidth',linewidth);
-plot(yawrate_final_10,'b--','LineWidth',linewidth);
+plot(plot_safesideslip,'r--','LineWidth',linewidth);
+plot(sideslip_final_1,'g','LineWidth',linewidth);
+plot(sideslip_final_10,'b','LineWidth',linewidth);
+plot(plot_safeyawrate,'r-*','LineWidth',linewidth);
+plot(yawrate_final_1,'k','LineWidth',linewidth);
+plot(yawrate_final_10,'m','LineWidth',linewidth);
 
 set(gca,'FontSize',fontsize)
-axis([1 time+size(sideslip_prev_10,2) -0.2 2.2])
+axis([1 time+size(sideslip_prev_10,2) -0.2 3.1])
 
 xlabel('Time(x0.1)(s)','FontSize',fontsize);
 ylabel('\beta (rad), \gamma (rad/s)','FontSize',fontsize);
-legend({'safe \beta','\beta','safe \gamma','\gamma'},'FontSize',fontsize);
+legend({'safe \beta','\beta in 1^\omega','\beta in (10)^\omega','safe \gamma','\gamma in 1^\omega','\gamma in (10)^\omega'},'FontSize',fontsize,'NumColumns',2);
 grid on;
 hold off;
 
 subplot(1,2,2);
 hold on;
-plot(plot_th,'LineWidth',linewidth);
-plot(r_final_10,'LineWidth',linewidth);
+plot(plot_th,'r','LineWidth',linewidth);
+plot(r_final_1,'b','LineWidth',linewidth);
+plot(r_final_10,'g','LineWidth',linewidth);
 set(gca,'FontSize',fontsize)
 xlabel('Time(x0.1)(s)','FontSize',fontsize);
 ylabel('residue','FontSize',fontsize);
-legend({'Th','|| r ||'},'FontSize',fontsize);
-% axis([1 time+size(sideslip_prev_10,2) -0.001 0.0035])
+legend({'Th','|| r || in 1^\omega','|| r || in (10)^\omega'},'FontSize',fontsize);
+axis([1 time+size(sideslip_prev_10,2) -0.001 0.005])
 grid on;
 hold off;

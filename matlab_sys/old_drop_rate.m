@@ -21,23 +21,23 @@
 %     0]; 
 
 % ESP
-% A = [0.4450 -0.0458;1.2939 0.4402];
-% B = [0.0550;4.5607];
-% C = [0 1];
-% D = 0;
-% 
-% dimension=size(A,1);
-% Ts=0.1;
-
-% Double integrator
-A = [0 1;
-      0 0];
-B = [0;
-      1];
-C = [1 0];
+A = [0.4450 -0.0458;1.2939 0.4402];
+B = [0.0550;4.5607];
+C = [0 1];
 D = 0;
+
 dimension=size(A,1);
 Ts=0.1;
+
+% Double integrator
+% A = [0 1;
+%       0 0];
+% B = [0;
+%       1];
+% C = [1 0];
+% D = 0;
+% dimension=size(A,1);
+% Ts=0.1;
 
 %Cruise Control (from CTMS)
 % A = -0.0500
@@ -146,7 +146,7 @@ for k=1:total_points
 
     [tmin,rP_feas] = feasp(lmisys) ;
     P = dec2mat(lmisys,rP_feas,P);            % display P matrix
-    r = dec2mat(lmisys,rP_feas,r)             % display r
+    r = dec2mat(lmisys,rP_feas,r)    ;         % display r
     
     decay(k)=epsilon;
     rate(k)=r;
