@@ -14,7 +14,7 @@ start = 0
 isSat = 0
 innerCircleDepth = 0.1
 isDelayed = 0
-####################################################################
+######################### systems ################################
 if modelName == "tempControl":
     modelName= "tempControl"
     A= np.matrix('0.94648514795348381856143760160194 0.0018971440127071483982418298452899;0 0.000000000013887943864964020896356969649573')
@@ -29,6 +29,7 @@ if modelName == "tempControl":
 elif modelName == "trajectory":
     A= np.matrix('1.0000    0.1000;0    1.0000')
     B= np.matrix('0.0050;0.1000')
+    #B= np.matrix('0.0001;0.01')             # this B is from pajic's paper
     C= np.matrix('1 0')
     D= np.matrix('0')
     Gain= np.matrix('16.0302    5.6622')  # settling time around 10
@@ -36,6 +37,16 @@ elif modelName == "trajectory":
     safex = [1,10]
     tolerance = [0.1,0.1]
     th = 0.05
+elif modelName == "trajectory_pajic":# model from pajic's sporadic MAC CDC paper
+    A= np.matrix('1.0000    0.1000;0    1.0000')
+    B= np.matrix('0.0001;0.01')             
+    C= np.matrix('1 0')
+    D= np.matrix('0')
+    Gain= np.matrix('16.0302    5.6622')  # settling time around 10
+    L = np.matrix('0.6180 0.0011;0.0011 0.6180')
+    safex = [0.025,0.025]
+    tolerance = [0.1,0.1]
+    th = 0.013
 elif modelName == "esp":
     A= np.matrix('0.4450 -0.0458;1.2939 0.4402')
     B= np.matrix('0.0550;4.5607')
@@ -93,7 +104,7 @@ y_count=C.shape[0]
 ######### Configure which sensor/control input to attack ##########
 u_attack_map = np.zeros(u_count,dtype=float)
 y_attack_map = np.zeros(y_count,dtype=float)
-u_attack_map[0] = 1
+u_attack_map[0] = 0
 y_attack_map[0] = 1
 
 ######### Configure which sensor/control input to attack ##########

@@ -3,7 +3,7 @@ import os
 import numpy as np
 import errno
 ############################## inputs ############################
-modelName = "esp"
+modelName = "trajectory_pajic"
 
 ################## attack length and position ###################
 attackLen = 1
@@ -36,6 +36,16 @@ elif modelName == "trajectory":
     safex = [1,10]
     tolerance = [0.1,0.1]
     th = 0.05
+elif modelName == "trajectory_pajic":# model from pajic's sporadic MAC CDC paper
+    A= np.matrix('1.0000    0.1000;0    1.0000')
+    B= np.matrix('0.0001;0.01')             
+    C= np.matrix('1 0')
+    D= np.matrix('0')
+    Gain= np.matrix('16.0302    5.6622')  # settling time around 10
+    L = np.matrix('0.6180 0.0011;0.0011 0.6180')
+    safex = [0.025,0.025]
+    tolerance = [0.1,0.1]
+    th = 0.013
 elif modelName == "esp":
     A= np.matrix('0.4450 -0.0458;1.2939 0.4402')
     B= np.matrix('0.0550;4.5607')
@@ -93,7 +103,7 @@ y_count=C.shape[0]
 ######### Configure which sensor/control input to attack ##########
 u_attack_map = np.zeros(u_count,dtype=float)
 y_attack_map = np.zeros(y_count,dtype=float)
-u_attack_map[0] = 1
+u_attack_map[0] = 0 
 y_attack_map[0] = 1
 
 ######### Configure which sensor/control input to attack ##########
@@ -149,7 +159,7 @@ for pattern in set(patternList):
             f.write("s = Solver()\n")
             # f.write("set_option(precision=40)\n")
             f.write("set_option(rational_to_decimal=True)\n")
-
+            # declaring variables
             for varcount in range(1,x_count+1):
                 f.write("xabs"+str(varcount)+" = np.zeros("+str(K+1)+", dtype=float)\n")
                 f.write("x"+str(varcount)+" = np.zeros("+str(K+1)+", dtype=float)\n")
@@ -182,7 +192,7 @@ for pattern in set(patternList):
 
                 decl+="r_"+str(i)+" = Real('r_"+str(i)+"')\n"
                 f.write(decl)
-                
+            #initial range declaration of variables    
             f.write("\n")
             for varcount in range(1,x_count+1):
                 f.write("s.add(x"+str(varcount)+"_0 >= "+str(initialRange[varcount-1,0])+")\n")
