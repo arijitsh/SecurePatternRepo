@@ -23,6 +23,7 @@ p = 500;
 Q = p*(C'*C);
 R = 0.1;
 [K,S,E] = dlqr(A,B,Q,R);
+K = [16.0302    5.6622];
 abs(eig(A-B*K))
 
 P = [0.1519    0.1073;
@@ -31,6 +32,7 @@ QN=0.01;
 RN=0.0001;
 
 [KEST,L,P] = kalman(sys_d,QN,RN)
+L = [1.8721;9.6532];
 abs(eig(A-L*C))
 
 x = [1;10];
@@ -38,7 +40,7 @@ y = C*x;
 z = [0;0];
 u = 0;
 
-time=3;
+time=30;
 plot_dist=zeros(1,time);
 plot_vel=zeros(1,time);
 plot_rnorm = zeros(1, time);
@@ -93,7 +95,7 @@ for i=1:time
     
     if pattern(i)==1
         u = -(K*xhat);
-        u_attacked = u + au(i)
+        u_attacked = u + au(i);
     else
         u = u;
         u_attacked = u_attacked;

@@ -3,11 +3,11 @@ import os
 import numpy as np
 import errno
 ############################## inputs ############################
-modelName = "trajectory_pajic"
+modelName = "trajectory"
 
 ################## attack length and position ###################
 attackLen = 1
-patternList = [10]
+patternList = [1]
 # patternList = [11011,11110,111100,110011,11011100,11010011,11110100,11110010,11001011,11001110,100011011,100011101,1000011011,1000011101,1000110011,1000111001,110010001011,110010001110,110010100011,110010111000,110011100010,110011101000,110001001011,110001001110,110001010011,110001011100,110001110010,110001110100,110100100011,110100111000,110100010011,110100011100,110111001000,110111000100,111100100010,111100101000,111100010010,111100010100,111101001000,111101000100]
 offset = 4
 start = 0
@@ -32,10 +32,12 @@ elif modelName == "trajectory":
     C= np.matrix('1 0')
     D= np.matrix('0')
     Gain= np.matrix('16.0302    5.6622')  # settling time around 10
-    L = np.matrix('1.8721;9.6532')
-    safex = [1,10]
-    tolerance = [0.1,0.1]
-    th = 0.05
+    L = np.matrix('0.9902;0.9892')
+    safex = [25,30]
+    tolerance = [1,1]
+    th = 2
+    sensorRange = [30]
+    actuatorRange = [0]
 elif modelName == "trajectory_pajic":# model from pajic's sporadic MAC CDC paper
     A= np.matrix('1.0000    0.1000;0    1.0000')
     B= np.matrix('0.0001;0.01')             
@@ -55,7 +57,9 @@ elif modelName == "esp":
     L= np.matrix('-0.0390;0.4339')
     safex = [1,2]
     tolerance = [0.1,0.1]
-    th = 0.003
+    th = 0.8
+    sensorRange = [2.5]
+    actuatorRange = [0]
 elif modelName == "powersystem":
     A= np.matrix('0.66 0.53;-0.53 0.13')
     B= np.matrix('0.34;0.53')
@@ -327,6 +331,13 @@ for pattern in set(patternList):
                     #     if j == attackLen:
                     #         j=0
 
+                expr_u=""
+                for varcount1 in range(1,u_count+1):
+                    if u_attack_map[varcount1-1] and actuatorRange[varcount1-1]!=0:
+                        expr_u+="s.add(And(u"+str(varcount1)+"_"+str(i+1)+">-"+str(actuatorRange[varcount1-1])+",u"+str(varcount1)+"_"+str(i+1)+"<"+str(actuatorRange[varcount1-1])+"))\n"
+                        expr_u+="s.add(And(uattacked"+str(varcount1)+"_"+str(i+1)+">-"+str(actuatorRange[varcount1-1])+",uattacked"+str(varcount1)+"_"+str(i+1)+"<"+str(actuatorRange[varcount1-1])+"))\n"
+                f.write(expr_u)
+
                 # Update y
                 if i == (j+index):
                     expr_y=""
@@ -352,6 +363,13 @@ for pattern in set(patternList):
                             expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")"         
                         expr_y+=")\n"
                     f.write(expr_y)
+
+
+                expr_y=""
+                for varcount1 in range(1,y_count+1):
+                    if y_attack_map[varcount1-1] and sensorRange[varcount1-1]!=0:
+                        expr_y+="s.add(And(y"+str(varcount1)+"_"+str(i+1)+">-"+str(sensorRange[varcount1-1])+",y"+str(varcount1)+"_"+str(i+1)+"<"+str(sensorRange[varcount1-1])+"))\n"
+                f.write(expr_y)
 
             f.write("s.add(Or(")
             assertion=""
@@ -521,7 +539,9 @@ for pattern in set(patternList):
                 isSat = int(content)
             f0.close()
             if isSat==0:
-                os.system("rm -rf "+path+fileName+" "+path+fileName+".z3out")
+                # os.system("rm -rf "+path+fileName+" "+path+fileName+".z3out")
+                os.remove(path+fileName)
+                os.remove(path+fileName+".z3out")
             else:
                 print("go to "+path+fileName+".z3out \n")
             index = index + 1
