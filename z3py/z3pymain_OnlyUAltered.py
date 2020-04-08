@@ -35,7 +35,7 @@ elif modelName == "trajectory":
     L = np.matrix('0.9902;0.9892')
     safex = [25,30]
     tolerance = [1,1]
-    th = 2
+    th = 2.5
     sensorRange = [30]
     actuatorRange = [0]
 elif modelName == "trajectory_pajic":# model from pajic's sporadic MAC CDC paper
@@ -47,7 +47,7 @@ elif modelName == "trajectory_pajic":# model from pajic's sporadic MAC CDC paper
     L = np.matrix('0.6180 0.0011;0.0011 0.6180')
     safex = [0.025,0.025]
     tolerance = [0.1,0.1]
-    th = 0.013
+    th = 0.035
 elif modelName == "esp":
     A= np.matrix('0.4450 -0.0458;1.2939 0.4402')
     B= np.matrix('0.0550;4.5607')
@@ -137,7 +137,7 @@ for pattern in set(patternList):
 
     print("Finding minimum attack length for "+str(modelName)+" and pattern "+str(pattern))
     isSat = 0
-    attackLen = 1
+    attackLen = 7
     while isSat == 0:  
         print("attack length:"+str(attackLen)+"\n")
         index = start
