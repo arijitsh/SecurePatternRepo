@@ -1,4 +1,8 @@
-# Controller type: PID
+# u altered : Control signal is neither computed nor communicated during drop
+# y altered : Sensor data is not communicated. Considered as 0. Residue is considered as 0
+# U delayed : U[k]=-KXhat[k-1] Control signal is calculated based on previous estimation 
+
+
 import os
 import numpy as np
 import errno
@@ -6,14 +10,17 @@ import errno
 modelName = "trajectory"
 
 ################## attack length and position ###################
-attackLen = 1
+initAttackLen = 1
 # patternList = [1]
-patternList = [10,110,1100,1011,11100,100011,11011,11110,111100,110011,1000111,1000111,10000111,10000111,110100,110010,1011100,1010011,10001011,10001110,11011100,11010011,11110100,11110010,11001011,11001110,100011011,100011110,100010111,100010111,100011110,100011101,1000011011,1000011110,1000010111,1000010111,1000011110,1000011101,1000111100,1000110011,1000111100,1000111001,1000100111,1000100111,110010001011,110010001110,110010100011,110010111000,110011100010,110011101000,110001001011,110001001110,110001010011,110001011100,110001110010,110001110100,110100100011,110100111000,110100010011,110100011100,110111001000,110111000100,111100100010,111100101000,111100010010,111100010100,111101001000,111101000100]
+# patternList = [10,1100,110010,110100]
+patternList = [110,1011,11100,100011,11011,11110,111100,110011,1000111,1000111,10000111,10000111,1011100,1010011,10001011,10001110,11011100,11010011,11110100,11110010,11001011,11001110,100011011,100011110,100010111,100010111,100011110,100011101,1000011011,1000011110,1000010111,1000010111,1000011110,1000011101,1000111100,1000110011,1000111100,1000111001,1000100111,1000100111,110010001011,110010001110,110010100011,110010111000,110011100010,110011101000,110001001011,110001001110,110001010011,110001011100,110001110010,110001110100,110100100011,110100111000,110100010011,110100011100,110111001000,110111000100,111100100010,111100101000,111100010010,111100010100,111101001000,111101000100]
+
 offset = 4
 start = 0
 isSat = 0
-innerCircleDepth = 0.1
-isDelayed = 0
+innerCircleDepth = 0.6
+isDelayed = 1
+yAffected = 1
 ####################################################################
 if modelName == "tempControl":
     modelName= "tempControl"
@@ -35,8 +42,8 @@ elif modelName == "trajectory":
     L = np.matrix('0.9902;0.9892')
     safex = [25,30]
     tolerance = [1,1]
-    th = 5
-    sensorRange = [30]
+    th = 2
+    sensorRange = [3000000]
     actuatorRange = [36]
 elif modelName == "trajectory_pajic":# model from pajic's sporadic MAC CDC paper
     A= np.matrix('1.0000    0.1000;0    1.0000')
@@ -137,11 +144,12 @@ for pattern in set(patternList):
 
     print("Finding minimum attack length for "+str(modelName)+" and pattern "+str(pattern))
     isSat = 0
-    attackLen = 10
+    attackLen = initAttackLen
     while isSat == 0:  
         print("attack length:"+str(attackLen)+"\n")
         index = start
         while (index<patternLen) and (isSat == 0):
+            print("attack start at "+str(index))
             # create drop pattern
             K = index + attackLen + offset
             dropPattern = np.ones((K), dtype=int)
@@ -155,8 +163,10 @@ for pattern in set(patternList):
             print("drop pattern:")
             print(dropPattern)
             print("\n")
-            fileName = modelName + "_onlyUAltered_" + str(th) + "_" +str(index)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".py"
+            # fileName = modelName + "_combined_" + str(th) + "_" +str(index)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".py"
+            fileName = modelName + "_combined_"+ str(innerCircleDepth)+"_" + str(th) + "_"+str(attackLen)+"_"+str(pattern)+".py"
             f = open(path+fileName, "w+")
+            f.write("#U altered, Y altered, U delayed*\n")
             f.write("from z3 import *\n")
             f.write("import math\n")
             f.write("import numpy as np\n\n")
@@ -217,12 +227,16 @@ for pattern in set(patternList):
                 # Update r
                 expr_r=""
                 for varcount1 in range(1,y_count+1):
-                    expr_r+="s.add(r"+str(varcount1)+"_"+str(i)+" == y"+str(varcount1)+"_"+str(i)
-                    for varcount2 in range(1,x_count+1):
-                        expr_r+=" - ("+str(C[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i)+")"
-                    for varcount3 in range(1,u_count+1):       
-                        expr_r+=" - ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i)+")"   
-                    expr_r+=")\n"
+                    if i>0 and dropPattern[i-1]==0 and yAffected:
+                        expr_r+="s.add(r"+str(varcount1)+"_"+str(i)+" == 0)\n"
+                    else:
+                        expr_r+="s.add(r"+str(varcount1)+"_"+str(i)+" == y"+str(varcount1)+"_"+str(i)
+                        for varcount2 in range(1,x_count+1):
+                            expr_r+=" - ("+str(C[varcount1-1,varcount2-1])+"*z"+str(varcount2)+"_"+str(i)+")"
+                        for varcount3 in range(1,u_count+1):       
+                            expr_r+=" - ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i)+")"   
+                        expr_r+=")\n"
+
                 f.write(expr_r)
 
                 # Compute 1-norm of r
@@ -285,35 +299,38 @@ for pattern in set(patternList):
                             expr_uatk+="s.add(uattacked"+str(varcount1)+"_"+str(i+1)+" == u"+str(varcount1)+"_"+str(i+1)+"+ ("+str(u_attack_map[varcount1-1])+"*attackOnU"+str(varcount1)+"_"+str(i)+"))\n"
                         f.write(expr_uatk)
 
-                        # expr_y=""
-                        # for varcount1 in range(1,y_count+1):
-                        #     f.write("attackOnY"+str(varcount1)+"_"+str(i)+" = Real('attackOnY"+str(varcount1)+"_"+str(i)+"')\n")
-                        #     expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == ("+str(y_attack_map[varcount1-1])+"*attackOnY"+str(varcount1)+"_"+str(i)+")"
-                        #     for varcount2 in range(1,x_count+1):
-                        #         expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
-                        #     for varcount3 in range(1,u_count+1):
-                        #         expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")" 
-                        #     expr_y+=")\n"
-                        # f.write(expr_y)
-                        
-                        # j = j+1
-                        # if j== attackLen:
-                        #     j=0      
+                        if yAffected:
+                            expr_y=""
+                            for varcount1 in range(1,y_count+1):
+                                f.write("attackOnY"+str(varcount1)+"_"+str(i)+" = Real('attackOnY"+str(varcount1)+"_"+str(i)+"')\n")
+                                expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == ("+str(y_attack_map[varcount1-1])+"*attackOnY"+str(varcount1)+"_"+str(i)+")"
+                                for varcount2 in range(1,x_count+1):
+                                    expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
+                                for varcount3 in range(1,u_count+1):
+                                    expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")" 
+                                expr_y+=")\n"
+                            f.write(expr_y)
+                            
+                            j = j+1
+                            if j== attackLen:
+                                j=0      
 
                     else: # If attack len exhausted
                         expr_uatk=""
                         for varcount1 in range(1,u_count+1):
                             expr_uatk+="s.add(uattacked"+str(varcount1)+"_"+str(i+1)+" == u"+str(varcount1)+"_"+str(i+1)+")\n"
                         f.write(expr_uatk)
-                        # expr_y=""
-                        # for varcount1 in range(1,y_count+1):
-                        #     expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == "
-                        #     for varcount2 in range(1,x_count+1):
-                        #         expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
-                        #     for varcount3 in range(1,u_count+1):
-                        #         expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")"         
-                        #     expr_y+=")\n"
-                        # f.write(expr_y)
+
+                        if yAffected:
+                            expr_y=""
+                            for varcount1 in range(1,y_count+1):
+                                expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == "
+                                for varcount2 in range(1,x_count+1):
+                                    expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
+                                for varcount3 in range(1,u_count+1):
+                                    expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i+1)+")"         
+                                expr_y+=")\n"
+                            f.write(expr_y)
                 else:
                     expr_u=""
                     for varcount1 in range(1,u_count+1):
@@ -321,15 +338,16 @@ for pattern in set(patternList):
                         expr_u+="s.add(uattacked"+str(varcount1)+"_"+str(i+1)+" == uattacked"+str(varcount1)+"_"+str(i)+")\n"
                     f.write(expr_u)
 
-                    # expr_y=""
-                    # for varcount1 in range(1,y_count+1):
-                    #     expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == 0)\n"
-                    # f.write(expr_y)
+                    if yAffected:
+                        expr_y=""
+                        for varcount1 in range(1,y_count+1):
+                            expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == 0)\n"
+                        f.write(expr_y)
 
-                    # if i == (j+index): 
-                    #     j = j + 1
-                    #     if j == attackLen:
-                    #         j=0
+                        if i == (j+index): 
+                            j = j + 1
+                            if j == attackLen:
+                                j=0
 
                 expr_u=""
                 for varcount1 in range(1,u_count+1):
@@ -338,31 +356,32 @@ for pattern in set(patternList):
                         expr_u+="s.add(And(uattacked"+str(varcount1)+"_"+str(i+1)+">-"+str(actuatorRange[varcount1-1])+",uattacked"+str(varcount1)+"_"+str(i+1)+"<"+str(actuatorRange[varcount1-1])+"))\n"
                 f.write(expr_u)
 
-                # Update y
-                if i == (j+index):
-                    expr_y=""
-                    for varcount1 in range(1,y_count+1):
-                        f.write("attackOnY"+str(varcount1)+"_"+str(i)+" = Real('attackOnY"+str(varcount1)+"_"+str(i)+"')\n")
-                        expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == ("+str(y_attack_map[varcount1-1])+"*attackOnY"+str(varcount1)+"_"+str(i)+")"
-                        for varcount2 in range(1,x_count+1):
-                            expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
-                        for varcount3 in range(1,u_count+1):
-                            expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")" 
-                        expr_y+=")\n"
-                    f.write(expr_y)
-                    j = j+1
-                    if j== attackLen:
-                        j=0  
-                else:
-                    expr_y=""
-                    for varcount1 in range(1,y_count+1):
-                        expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == "
-                        for varcount2 in range(1,x_count+1):
-                            expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
-                        for varcount3 in range(1,u_count+1):
-                            expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")"         
-                        expr_y+=")\n"
-                    f.write(expr_y)
+                # Update y when drop has no effect on y
+                if yAffected==0:
+                    if i == (j+index):
+                        expr_y=""
+                        for varcount1 in range(1,y_count+1):
+                            f.write("attackOnY"+str(varcount1)+"_"+str(i)+" = Real('attackOnY"+str(varcount1)+"_"+str(i)+"')\n")
+                            expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == ("+str(y_attack_map[varcount1-1])+"*attackOnY"+str(varcount1)+"_"+str(i)+")"
+                            for varcount2 in range(1,x_count+1):
+                                expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
+                            for varcount3 in range(1,u_count+1):
+                                expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")" 
+                            expr_y+=")\n"
+                        f.write(expr_y)
+                        j = j+1
+                        if j== attackLen:
+                            j=0  
+                    else:
+                        expr_y=""
+                        for varcount1 in range(1,y_count+1):
+                            expr_y+="s.add(y"+str(varcount1)+"_"+str(i+1)+" == "
+                            for varcount2 in range(1,x_count+1):
+                                expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_"+str(i+1)+")"
+                            for varcount3 in range(1,u_count+1):
+                                expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*uattacked"+str(varcount3)+"_"+str(i+1)+")"         
+                            expr_y+=")\n"
+                        f.write(expr_y)
 
 
                 expr_y=""
