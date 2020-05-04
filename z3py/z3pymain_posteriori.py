@@ -10,7 +10,7 @@ import errno
 modelName = "trajectory"
 
 ################## attack length and position ###################
-attackLen = 1
+initAttackLen = 1
 patternList = [1]
 # patternList = [1100,10,110010,110100]
 # patternList = [110,1011,11100,100011,11011,11110,111100,110011,1000111,1000111,10000111,10000111,1011100,1010011,10001011,10001110,11011100,11010011,11110100,11110010,11001011,11001110,100011011,100011110,100010111,100010111,100011110,100011101,1000011011,1000011110,1000010111,1000010111,1000011110,1000011101,1000111100,1000110011,1000111100,1000111001,1000100111,1000100111,110010001011,110010001110,110010100011,110010111000,110011100010,110011101000,110001001011,110001001110,110001010011,110001011100,110001110010,110001110100,110100100011,110100111000,110100010011,110100011100,110111001000,110111000100,111100100010,111100101000,111100010010,111100010100,111101001000,111101000100]
@@ -18,7 +18,7 @@ patternList = [1]
 offset = 4
 start = 0
 isSat = 0
-innerCircleDepth = 0.6
+innerCircleDepth = 0.2
 isDelayed = 0
 yAffected = 0
 ####################################################################
@@ -43,7 +43,7 @@ elif modelName == "trajectory":
     safex = [25,30]
     tolerance = [1,1]
     th = 2
-    sensorRange = [30]
+    sensorRange = [300000]
     actuatorRange = [36]
 elif modelName == "trajectory_pajic":# model from pajic's sporadic MAC CDC paper
     A= np.matrix('1.0000    0.1000;0    1.0000')
@@ -149,7 +149,7 @@ for pattern in set(patternList):
 
     print("Finding minimum attack length for "+str(modelName)+" and pattern "+str(pattern))
     isSat = 0
-    attackLen = 10
+    attackLen = initAttackLen
     while isSat == 0:  
         print("attack length:"+str(attackLen)+"\n")
         index = start
@@ -167,7 +167,7 @@ for pattern in set(patternList):
             print("drop pattern:")
             print(dropPattern)
             print("\n")
-            fileName = modelName + "_onlyUAltered_" + str(th) + "_" +str(index)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".py"
+            fileName = modelName + "_posteriori_" + str(th) + "_" +str(index)+"_"+str(attackLen)+"_"+str(K)+"_"+str(pattern)+".py"
             f = open(path+fileName, "w+")
             f.write("from z3 import *\n")
             f.write("import math\n")
@@ -240,7 +240,6 @@ for pattern in set(patternList):
                     expr_x=expr_x[:len(expr_x)-1] 
                     expr_x = expr_x + ")\n"         
 
-                f.write(expr_z)
                 f.write(expr_x)
                 f.write(expr_xabs)  
 
@@ -419,7 +418,7 @@ for pattern in set(patternList):
             f.write("\tf0.close()\n") 
             f.write("\tm = s.model()\n")
             f.write("\tfor d in m.decls():\n")
-            # f.write("\t\tprint (\"%s = %s\" % (d.name(), m[d]))\n")
+            f.write("\t\tprint (\"%s = %s\" % (d.name(), m[d]))\n")
             for varcount in range(1,u_count+1): # Parsing u, attack on u and attacked u values from the z3 py output
                 f.write("\t\tif \"attackOnU"+str(varcount)+"_\" in d.name():\n")
                 f.write("\t\t\ti = int(d.name().split('_')[1])\n")
@@ -572,7 +571,6 @@ for pattern in set(patternList):
             else:
                 print("go to "+path+fileName+".z3out \n")
             index = index + 1
-            isSat=1
         attackLen = attackLen + 1
 
     final = open(path+modelName+"_final_downtime.result", "a+")
