@@ -97,30 +97,30 @@ ay = [ak2 zeros(1, time-size(ak2,2))];
 
 % x = [0.0000013812;0.0000048081]
 x = [0.001;0.00018];
-xhat = [0;0]
-u = 0.0
-u_attacked = 0
-y = C*x
-yhat = C*xhat
+xhat = [0;0];
+u = 0.0;
+u_attacked = 0;
+y = C*x;
+yhat = C*xhat;
 delta = steering_angle*(pi/180)*steering_ratio;  
 
 for i=1:time  
-    i
-    r = y - yhat
-    r_norm = abs(r)
-    xhat = A*xhat + B*u + L*r
-    x = A*x + B*u_attacked    
+    i;
+    r = y - yhat;
+    r_norm = abs(r);
+    xhat = A*xhat + B*u + L*r;
+    x = A*x + B*u_attacked    ;
     
     if pattern(i)==1
-        u = -(K*xhat)
-        u_attacked = u + au(i)
+        u = -(K*xhat);
+        u_attacked = u + au(i);
     else
-        u = u
-        u_attacked = u_attacked
+        u = u;
+        u_attacked = u_attacked;
     end
     
-    y = C*x + ay(i)
-    yhat = C*xhat
+    y = C*x + ay(i);
+    yhat = C*xhat;
     
     
     plot_sideslip(i) = x(1);
@@ -217,7 +217,7 @@ axis([1 time+size(sideslip_prev_10,2) -0.2 3.1])
 
 xlabel('Time(x0.1)(s)','FontSize',fontsize);
 ylabel('\beta (rad), \gamma (rad/s)','FontSize',fontsize);
-legend({'safe \beta','\beta in 1^\omega','\beta in (10)^\omega','safe \gamma','\gamma in 1^\omega','\gamma in (10)^\omega'},'FontSize',fontsize,'NumColumns',2);
+% legend({'safe \beta','\beta in 1^\omega','\beta in (10)^\omega','safe \gamma','\gamma in 1^\omega','\gamma in (10)^\omega'},'FontSize',fontsize,'NumColumns',2);
 grid on;
 hold off;
 
@@ -229,7 +229,7 @@ plot(r_final_10,'g','LineWidth',linewidth);
 set(gca,'FontSize',fontsize)
 xlabel('Time(x0.1)(s)','FontSize',fontsize);
 ylabel('residue','FontSize',fontsize);
-legend({'Th','|| r || in 1^\omega','|| r || in (10)^\omega'},'FontSize',fontsize);
+% legend({'Th','|| r || in 1^\omega','|| r || in (10)^\omega'},'FontSize',fontsize);
 axis([1 time+size(sideslip_prev_10,2) -0.001 0.005])
 grid on;
 hold off;
