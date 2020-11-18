@@ -3,7 +3,7 @@ import os
 import numpy as np
 import errno
 ############################## inputs ############################
-modelName = "trajectory"
+modelName = "esp_journal"
 
 ################## attack length and position ###################
 patternList = [1]
@@ -41,10 +41,26 @@ elif modelName == "esp":
     B= np.matrix('0.0550;4.5607')
     C= np.matrix('0 1')
     D= np.matrix('0')
-    Gain= np.matrix('-0.0987 0.1420')
+    # Gain= np.matrix('-0.0987 0.1420')
+    Gain= np.matrix('0.2826    0.0960')
     L= np.matrix('-0.0390;0.4339')
     outerCircle = [1,2]
     th = 0.003
+    settlingTime = 5 #new
+    sensorRange = [2.5] #new
+    actuatorRange = [0.8125] #new
+elif modelName == "esp_journal":
+    A= np.matrix('0.6278   -0.0259; 0.4644    0.7071')
+    B= np.matrix('0.1246   -0.00000028;3.2763    0.000016')
+    C= np.matrix('0    1.0000; -338.7813    1.1293')
+    D= np.matrix('0         0;169.3907         0')
+    Gain= np.matrix('5.261 -0.023;-414911.26, 57009.48')
+    L= np.matrix('-0.00000000002708 -0.00000000063612;0.00000000033671  0.00000000556308')
+    outerCircle = [1,2]
+    th = 0.003
+    settlingTime = 12 #new
+    sensorRange = [2.5,15] #new
+    actuatorRange = [0.8125] #new
 elif modelName == "powersystem":
     A= np.matrix('0.66 0.53;-0.53 0.13')
     B= np.matrix('0.34;0.53')
@@ -108,17 +124,18 @@ for pattern in set(patternList):
     
     index = 0
     maxOnTime = 0    
-    innerCircleDepth=0.3 #new
+    innerCircleDepth=0.1 #new
     maxIteration = settlingTime+5 #new
     isSat = 1
-    while innerCircleDepth < 1 and isSat==1:#new                 
+    while innerCircleDepth < 1 and isSat==1:#new      
+        print("Checking for performance region:"+str(innerCircleDepth))           
         K = settlingTime #new
         # isBreak = 0
         f0 = open(path+modelName+".result", "w+")
         f0.write(str(K)+":\n")
         f0.close()
         while isSat == 1 and K<maxIteration:  #new
-            print("Checking for performance region:"+str(innerCircleDepth))
+            print("Checking iterations:"+str(K))
             # create drop pattern    
             dropPattern = np.ones((K), dtype=int)
             j=index
@@ -167,11 +184,20 @@ for pattern in set(patternList):
             f.write("s.add(depth0 =="+str(innerCircleDepth)+")\n") #new
             for varcount in range(1,x_count+1):
                 f.write("s.add(And(x"+str(varcount)+"_0 < "+str(innitialRegionDepth)+"*"+str(outerCircle[varcount-1])+",x"+str(varcount)+"_0 > "+str(innitialRegionDepth)+"* (-"+str(outerCircle[varcount-1])+")))\n") #new
-            for varcount1 in range(1,y_count+1):
-                f.write("s.add(y"+str(varcount1)+"_0 == 0)\n")
+                f.write("s.add(z"+str(varcount)+"_0 == 0) \n") #new
             for varcount2 in range(1,u_count+1): 
                 f.write("s.add(u"+str(varcount2)+"_0 == 0)\n")
             f.write("\n")
+            expr_y=""
+            for varcount1 in range(1,y_count+1):
+                expr_y+="s.add(y"+str(varcount1)+"_0 == "
+                for varcount2 in range(1,x_count+1):
+                    expr_y+=" + ("+str(C[varcount1-1,varcount2-1])+"*x"+str(varcount2)+"_0)"
+                for varcount3 in range(1,u_count+1):
+                    expr_y+=" + ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_0)"         
+                expr_y+=")\n"
+            f.write(expr_y)
+            
 
             for i in range(K):
                 # Update r
@@ -184,19 +210,6 @@ for pattern in set(patternList):
                         expr_r+=" - ("+str(D[varcount1-1,varcount3-1])+"*u"+str(varcount3)+"_"+str(i)+")"   
                     expr_r+=")\n"
                 f.write(expr_r)
-
-                # Compute 1-norm of r
-                # expr_rabs = "#residue norm calc\n"
-                # expr_r = "s.add(r_"+str(i)+" ==" 
-                # for varcount1 in range(1,y_count+1):
-                #     expr_rabs+= "s.add(rabs"+str(varcount1)+"_"+str(i)+" == If(r"+str(varcount1)+"_"+str(i)+"<0,(-1)*r"+str(varcount1)+"_"+str(i)+",r"+str(varcount1)+"_"+str(i)+"))\n"
-                #     expr_r+="rabs"+str(varcount1)+"_"+str(i)+" +"
-                # expr_r = expr_r[:len(expr_r)-1] 
-                # expr_r+=")\n"
-                # f.write(expr_rabs)
-                # f.write(expr_r)
-
-                # f.write("s.add(r_{0}<{1})\n".format(i,th))
 
                 # Update x and z
                 expr_x="#state calc\n"
@@ -245,8 +258,11 @@ for pattern in set(patternList):
 
                 # u limit check
                 expr_u="#actuation saturation bound\n"
-                for varcount1 in range(1,u_count+1):
-                        expr_u+="s.add(And(u"+str(varcount1)+"_"+str(i+1)+">-"+str(actuatorRange[varcount1-1])+",u"+str(varcount1)+"_"+str(i+1)+"<"+str(actuatorRange[varcount1-1])+"))\n"
+                if modelName == "esp_journal":
+                    expr_u+="s.add(And(u1_"+str(i+1)+">-"+str(actuatorRange[0])+",u1_"+str(i+1)+"<"+str(actuatorRange[0])+"))\n"
+                else:
+                    for varcount1 in range(1,u_count+1):
+                            expr_u+="s.add(And(u"+str(varcount1)+"_"+str(i+1)+">-"+str(actuatorRange[varcount1-1])+",u"+str(varcount1)+"_"+str(i+1)+"<"+str(actuatorRange[varcount1-1])+"))\n"
                 f.write(expr_u)
                 # Update y
                 expr_y="#output calc\n"
@@ -278,17 +294,18 @@ for pattern in set(patternList):
             f.write("\nif s.check() != sat:\n")
             f.write("\tprint(s.check())\n")
             f.write("\tisSat = 0\n")
+            f.write("\tf0 = open(\""+path+modelName+".z3result\", \"w+\")\n")
+            f.write("\tf0.write(str(0))\n")
+            f.write("\tf0.close()\n")
             f.write("else:\n")
             f.write("\tprint(s.check())\n")
             f.write("\tisSat = 1\n")
+            f.write("\tf0 = open(\""+path+modelName+".z3result\", \"w+\")\n")
+            f.write("\tf0.write(str(1))\n")
+            f.write("\tf0.close()\n")
             f.write("\tm = s.model()\n")
             f.write("\tfor d in m.decls():\n")
             f.write("\t\tprint (\"%s = %s\" % (d.name(), m[d]))\n") 
-
-            # f.write("if isSat==0:\n")#new
-            f.write("\tf0 = open(\""+path+modelName+".z3result\", \"w+\")\n")
-            f.write("\tf0.write(str("+str(isSat)+"))\n")
-            f.write("\tf0.close()\n")
 
             f.close()
             
@@ -300,12 +317,11 @@ for pattern in set(patternList):
             f0.close()
             print("isSat="+str(isSat))
             if isSat==0:
-                print("performance region:"+innerCircleDepth)#new
+                print("performance region:"+str(innerCircleDepth))#new
                 break#new
             else:
                 K=K+1 #new                           
-        else:
-            innerCircleDepth= innerCircleDepth+0.1 #new
+        innerCircleDepth= innerCircleDepth+0.1 #new
         
     
     
