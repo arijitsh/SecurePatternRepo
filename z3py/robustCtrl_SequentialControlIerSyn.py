@@ -16,7 +16,7 @@ modelName = "trajectory"
 patternList = [1]
 
 #########################################
-initAttackLen = 2
+initAttackLen = 1
 offset = 0
 start = 0
 isSat = 0
@@ -139,8 +139,8 @@ for i in range(x_count):
     initialRange[i,0] = (-1)*safex[i]*innerCircleDepth
     initialRange[i,1] = safex[i]*innerCircleDepth
 
-depth = 1
-regionCount = 1
+depth = 1*0.89*0.89*0.89*0.89*0.89*0.89*0.89*0.89*0.89*0.89*0.89
+regionCount = 12
 outerMost = [i for i in safex]
 inner = [innerCircleDepth*i for i in safex]
 print("inner circle")
@@ -173,9 +173,9 @@ for pattern in set(patternList):
     while stop==0: #inisSat == 0:  
         # print("attack length:"+str(attackLen)+"\n")
         index = start
-        # safex = [i*depth for i in safex]
-        safex = [5.378782882992188, 6.454539459590626]
-        depth = 0.74
+        safex = [i*depth for i in safex]
+        # safex = [5.378782882992188, 6.454539459590626]
+        depth = 0.885
         isSat = 0
         isNewRegion = 1
         print("outer region:")
@@ -245,8 +245,11 @@ for pattern in set(patternList):
             #initial range declaration of variables    
             f.write("\n#Init\n")
             for varcount in range(1,x_count+1):
-                f.write("s.add(Or(x"+str(varcount)+"_0 == "+str(safex[varcount-1])+",x"+str(varcount)+"_0 == "+str(-safex[varcount-1])+"))\n")#new
-                f.write("s.add(z"+str(varcount)+"_0 == 0)\n")
+                f.write("s.add(Or(x"+str(varcount)+"_0 == "+str(safex[varcount-1])+",x"+str(varcount)+"_0 == "+str(-safex[varcount-1])+"))\n")
+                forallvars+="x"+str(varcount)+"_0,"
+                f.write("s.add(And(z"+str(varcount)+"_0 <= "+str(safex[varcount-1])+",z"+str(varcount)+"_0 >= "+str(-safex[varcount-1])+"))\n")#new
+                # f.write("s.add(z"+str(varcount)+"_0 == 0)\n")
+                forallvars+="z"+str(varcount)+"_0,"
                 f.write("s.add(xabs"+str(varcount)+"_0 == If(x"+str(varcount)+"_0<0,(-1)*x"+str(varcount)+"_0,x"+str(varcount)+"_0))\n")
             f.write("\n")
 
